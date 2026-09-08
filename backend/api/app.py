@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routes import router as status_router
 from backend.api.endpoints import router as analysis_router
+from backend.api.server_endpoints import router as server_router
 
 
 app = FastAPI(
@@ -43,6 +44,7 @@ app.add_middleware(
 
 app.include_router(status_router)
 app.include_router(analysis_router)
+app.include_router(server_router)
 
 
 # ----------------------------------------------------------
