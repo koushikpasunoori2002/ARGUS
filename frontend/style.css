@@ -898,3 +898,72 @@ button:disabled {
 .server-slider-viewport {
     scrollbar-width: thin;
 }
+/* ==========================================================
+   Rsync Status Vertical Slider
+   ========================================================== */
+
+.sync-section {
+    overflow: hidden;
+}
+
+.sync-status-list {
+    height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+}
+
+/* Keep status cards stacked vertically */
+.sync-status-card {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 90%;
+}
+
+/* Reduce headings slightly as well */
+.sync-status-card h3 {
+    font-size: 90%;
+}
+
+/* Keep the status text compact */
+.sync-status-card p {
+    font-size: 90%;
+}
+/* ==========================================================
+   Rsync Status Scroll Panel
+   ========================================================== */
+
+.sync-section {
+    overflow: hidden;
+}
+
+.sync-status-list {
+    height: 260px;
+    max-height: 260px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding-right: 10px;
+    box-sizing: border-box;
+
+    /* Keeps space reserved for the scrollbar */
+    scrollbar-gutter: stable;
+}
+
+/* Stack status cards vertically */
+.sync-status-card {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 90%;
+}
+
+/* Reduce card heading by approximately 10% */
+.sync-status-card h3 {
+    font-size: 90%;
+}
+
+/* Reduce status information text by approximately 10% */
+.sync-status-card p {
+    font-size: 90%;
+}

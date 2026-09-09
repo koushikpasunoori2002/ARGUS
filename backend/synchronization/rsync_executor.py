@@ -27,9 +27,9 @@ class RsyncExecutor:
     """
     Executes rsync through WSL.
 
-    The executor is responsible only for executing one rsync
-    operation and preventing an unreachable server from blocking
-    the synchronization scheduler indefinitely.
+    The executor accepts rsync options from the configured
+    synchronization source, allowing each server to define
+    its own rsync behaviour.
     """
 
     def __init__(
@@ -97,8 +97,7 @@ class RsyncExecutor:
         """
         Execute one rsync operation.
 
-        The operation is automatically terminated when the
-        configured timeout is exceeded.
+        The caller can provide custom rsync options.
         """
 
         if (
@@ -124,20 +123,21 @@ class RsyncExecutor:
             destination_path
         )
 
+        # Use configured options when supplied.
+        # Fall back to the standard archive, verbose,
+        # and compression flags.
+        rsync_options = (
+            list(options)
+            if options
+            else ["-avz"]
+        )
+
         command = [
             *self.command,
-            "-avz",
+            *rsync_options,
+            wsl_source,
+            wsl_destination,
         ]
-
-        if options:
-            command.extend(options)
-
-        command.extend(
-            [
-                wsl_source,
-                wsl_destination,
-            ]
-        )
 
         try:
 
@@ -169,6 +169,7 @@ class RsyncExecutor:
             )
 
             if stderr.strip():
+
                 timeout_message = (
                     f"{timeout_message} "
                     f"{stderr.strip()}"

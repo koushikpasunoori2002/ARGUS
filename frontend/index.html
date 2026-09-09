@@ -17,6 +17,102 @@
         href="style.css"
     >
 
+    <!-- ==================================================
+         Rsync Status Slider Overrides
+         ================================================== -->
+
+    <style>
+
+        /* --------------------------------------------------
+           Rsync Status Scroll Container
+           -------------------------------------------------- */
+
+        .sync-status-viewport {
+            width: 100%;
+            height: 300px;
+            max-height: 300px;
+
+            overflow-y: scroll;
+            overflow-x: hidden;
+
+            padding-right: 10px;
+
+            box-sizing: border-box;
+
+            scrollbar-width: auto;
+
+            scrollbar-gutter: stable;
+        }
+
+
+        /* --------------------------------------------------
+           Rsync Status List
+           -------------------------------------------------- */
+
+        .sync-status-list {
+            width: 100%;
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 10px;
+
+            box-sizing: border-box;
+
+            font-size: 90%;
+        }
+
+
+        /* --------------------------------------------------
+           Rsync Status Cards
+           -------------------------------------------------- */
+
+        .sync-status-card {
+            width: 100%;
+
+            box-sizing: border-box;
+
+            font-size: 90%;
+        }
+
+
+        .sync-status-card h3 {
+            font-size: 90%;
+        }
+
+
+        .sync-status-card p {
+            font-size: 90%;
+        }
+
+
+        /* --------------------------------------------------
+           Visible WebKit Scrollbar
+           -------------------------------------------------- */
+
+        .sync-status-viewport::-webkit-scrollbar {
+            width: 12px;
+        }
+
+
+        .sync-status-viewport::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+
+
+        .sync-status-viewport::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+
+
+        .sync-status-viewport::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+    </style>
+
 </head>
 
 
@@ -190,11 +286,23 @@
                 Synchronization activity will appear here.
             </p>
 
+
+            <!-- ------------------------------------------------
+                 FIXED HEIGHT STATUS VIEWPORT
+                 ------------------------------------------------ -->
+
             <div
-                id="sync-status-list"
-                class="sync-status-list"
+                id="sync-status-viewport"
+                class="sync-status-viewport"
             >
-                No synchronization activity yet.
+
+                <div
+                    id="sync-status-list"
+                    class="sync-status-list"
+                >
+                    No synchronization activity yet.
+                </div>
+
             </div>
 
         </section>
@@ -243,19 +351,23 @@
                     class="slider-button"
                     id="previous-server-button"
                     aria-label="Previous servers"
-            >
+                >
                     &#10094;
                 </button>
+
 
                 <div
                     class="server-slider-viewport"
                     id="server-slider-viewport"
                 >
+
                     <div
                         class="server-slider-track"
                         id="server-list"
                     ></div>
+
                 </div>
+
 
                 <button
                     type="button"
@@ -400,6 +512,29 @@
                             >
 
                         </div>
+
+                    </div>
+
+
+                    <!-- Rsync Options -->
+
+                    <div class="form-group">
+
+                        <label for="server-rsync-options">
+                            Rsync Options
+                        </label>
+
+                        <input
+                            type="text"
+                            id="server-rsync-options"
+                            value="-avz"
+                            placeholder="-avz or -a,--delete"
+                        >
+
+                        <small>
+                            Enter rsync options separated by commas.
+                            Example: -a,--delete
+                        </small>
 
                     </div>
 

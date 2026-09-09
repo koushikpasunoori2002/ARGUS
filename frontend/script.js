@@ -75,6 +75,11 @@ const serverSyncIntervalInput =
         "server-sync-interval"
     );
 
+const serverRsyncOptionsInput =
+    document.getElementById(
+        "server-rsync-options"
+    );
+
 const serverEnabledInput =
     document.getElementById(
         "server-enabled"
@@ -146,6 +151,46 @@ function createServerName(sourceId) {
                 part.slice(1)
         )
         .join(" ");
+}
+
+
+
+// ==========================================================
+// Parse rsync options
+// ==========================================================
+
+function parseRsyncOptions(value) {
+
+    if (!value || !value.trim()) {
+        return ["-avz"];
+    }
+
+    return value
+        .split(",")
+        .map(
+            option => option.trim()
+        )
+        .filter(
+            option => option.length > 0
+        );
+}
+
+
+
+// ==========================================================
+// Format rsync options
+// ==========================================================
+
+function formatRsyncOptions(options) {
+
+    if (
+        !Array.isArray(options) ||
+        options.length === 0
+    ) {
+        return "-avz";
+    }
+
+    return options.join(",");
 }
 
 
@@ -309,6 +354,13 @@ function renderServers(servers) {
                         ? parsedInterval
                         : 60;
 
+                const rsyncOptions =
+                    Array.isArray(
+                        server.rsync_options
+                    )
+                        ? server.rsync_options
+                        : ["-avz"];
+
                 return `
                     <div class="server-card">
 
@@ -346,6 +398,15 @@ function renderServers(servers) {
                             Local Path:
                             ${escapeHtml(
                                 server.local_path
+                            )}
+                        </p>
+
+                        <p>
+                            Rsync Options:
+                            ${escapeHtml(
+                                formatRsyncOptions(
+                                    rsyncOptions
+                                )
                             )}
                         </p>
 
@@ -535,6 +596,9 @@ function openAddServerForm() {
     serverSyncIntervalInput.value =
         "60";
 
+    serverRsyncOptionsInput.value =
+        "-avz";
+
     serverEnabledInput.checked =
         true;
 
@@ -592,15 +656,18 @@ async function openEditServerForm(
                 server.sync_interval || 60
             );
 
+        serverRsyncOptionsInput.value =
+            formatRsyncOptions(
+                server.rsync_options
+            );
+
         serverEnabledInput.checked =
             Boolean(
                 server.enabled
             );
 
         /*
-         * The API requires the source_id in the URL
-         * and request body to match, so the ID is
-         * kept fixed while editing.
+         * Keep the source ID fixed while editing.
          */
         serverSourceIdInput.disabled =
             true;
@@ -652,6 +719,9 @@ function closeServerForm() {
     serverSyncIntervalInput.value =
         "60";
 
+    serverRsyncOptionsInput.value =
+        "-avz";
+
     serverEnabledInput.checked =
         true;
 }
@@ -682,6 +752,11 @@ async function saveServer() {
     const syncInterval =
         Number(
             serverSyncIntervalInput.value
+        );
+
+    const rsyncOptions =
+        parseRsyncOptions(
+            serverRsyncOptionsInput.value
         );
 
 
@@ -738,6 +813,15 @@ async function saveServer() {
         return;
     }
 
+    if (rsyncOptions.length === 0) {
+
+        alert(
+            "Please enter at least one rsync option."
+        );
+
+        return;
+    }
+
 
 
     // ------------------------------------------------------
@@ -770,7 +854,10 @@ async function saveServer() {
             serverEnabledInput.checked,
 
         sync_interval:
-            syncInterval
+            syncInterval,
+
+        rsync_options:
+            rsyncOptions
     };
 
 
@@ -779,20 +866,20 @@ async function saveServer() {
     // Disable button while saving
     // ------------------------------------------------------
 
+    const isEditing =
+        editingSourceId !== null;
+
     saveServerButton.disabled =
         true;
 
     saveServerButton.textContent =
-        editingSourceId
+        isEditing
             ? "Saving..."
             : "Adding...";
 
 
 
     try {
-
-        const isEditing =
-            editingSourceId !== null;
 
         const url =
             isEditing
@@ -823,8 +910,6 @@ async function saveServer() {
                         )
                 }
             );
-
-
 
         if (!response.ok) {
 
@@ -857,15 +942,11 @@ async function saveServer() {
             );
         }
 
-
-
         closeServerForm();
 
         await loadServers();
 
         await loadSyncStatus();
-
-
 
     } catch (error) {
 
@@ -874,7 +955,7 @@ async function saveServer() {
         alert(
             error.message ||
             (
-                editingSourceId
+                isEditing
                     ? "Unable to update server."
                     : "Unable to add server."
             )
@@ -886,7 +967,7 @@ async function saveServer() {
             false;
 
         saveServerButton.textContent =
-            editingSourceId
+            isEditing
                 ? "Save Changes"
                 : "Add Server";
     }
@@ -913,8 +994,6 @@ async function deleteServer(
         return;
     }
 
-
-
     try {
 
         const response =
@@ -926,8 +1005,6 @@ async function deleteServer(
                     method: "DELETE"
                 }
             );
-
-
 
         if (!response.ok) {
 
@@ -958,13 +1035,9 @@ async function deleteServer(
             );
         }
 
-
-
         await loadServers();
 
         await loadSyncStatus();
-
-
 
     } catch (error) {
 
@@ -1290,8 +1363,6 @@ if (addServerButton) {
     );
 }
 
-
-
 if (cancelServerButton) {
 
     cancelServerButton.addEventListener(
@@ -1299,8 +1370,6 @@ if (cancelServerButton) {
         closeServerForm
     );
 }
-
-
 
 if (saveServerButton) {
 
@@ -1310,8 +1379,6 @@ if (saveServerButton) {
     );
 }
 
-
-
 if (serverSourceIdInput) {
 
     serverSourceIdInput.addEventListener(
@@ -1319,8 +1386,6 @@ if (serverSourceIdInput) {
         updateLocalPath
     );
 }
-
-
 
 if (analyzeButton) {
 

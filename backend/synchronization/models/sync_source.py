@@ -2,7 +2,9 @@
 Synchronization source model.
 """
 
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -10,8 +12,8 @@ class SyncSource:
     """
     Represents one configured synchronization source.
 
-    The source contains connection, filesystem, and
-    synchronization scheduling information.
+    The source contains connection, filesystem, scheduling,
+    and rsync configuration information.
     """
 
     source_id: str
@@ -22,6 +24,9 @@ class SyncSource:
     local_path: str
     enabled: bool = True
     sync_interval: int = 60
+    rsync_options: list[str] = field(
+        default_factory=lambda: ["-avz"]
+    )
 
     def __post_init__(self) -> None:
         """Validate the source configuration."""
@@ -62,6 +67,23 @@ class SyncSource:
                 "greater than 0."
             )
 
+        if not isinstance(self.rsync_options, list):
+
+            raise TypeError(
+                "rsync_options must be a list."
+            )
+
+        for option in self.rsync_options:
+
+            if (
+                not isinstance(option, str)
+                or not option.strip()
+            ):
+                raise ValueError(
+                    "Every rsync option must be a "
+                    "non-empty string."
+                )
+
     @property
     def rsync_source(self) -> str:
         """
@@ -85,4 +107,5 @@ class SyncSource:
             "local_path": self.local_path,
             "enabled": self.enabled,
             "sync_interval": self.sync_interval,
+            "rsync_options": self.rsync_options,
         }

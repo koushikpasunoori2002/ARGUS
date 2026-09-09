@@ -17,6 +17,7 @@ class SyncManager:
     The manager is responsible for:
     - validating the source
     - checking whether synchronization is enabled
+    - passing server-specific rsync options
     - executing rsync
     - returning the synchronization result
 
@@ -34,7 +35,8 @@ class SyncManager:
         source: SyncSource,
     ) -> RsyncResult:
         """
-        Synchronize one configured source.
+        Synchronize one configured source using its
+        server-specific rsync configuration.
         """
 
         if not isinstance(source, SyncSource):
@@ -60,6 +62,7 @@ class SyncManager:
         return self.executor.sync(
             source=source.rsync_source,
             destination=destination,
+            options=source.rsync_options,
         )
 
     def is_available(self) -> bool:
