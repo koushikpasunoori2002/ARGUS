@@ -17,6 +17,7 @@ from backend.api.routes import router as status_router
 from backend.api.endpoints import router as analysis_router
 from backend.api.server_endpoints import router as server_router
 from backend.config.hosts_config import HostsConfig
+from backend.config.system_config import SystemConfig
 from backend.synchronization.synchronization_service import (
     SynchronizationService,
 )
@@ -30,25 +31,41 @@ synchronization_logger = logging.getLogger(
     "backend.synchronization.synchronization_service"
 )
 
-synchronization_logger.setLevel(logging.INFO)
+synchronization_logger.setLevel(
+    logging.INFO
+)
+
 synchronization_logger.propagate = False
 
 if not synchronization_logger.handlers:
 
     console_handler = logging.StreamHandler()
 
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(
+        logging.INFO
+    )
 
     console_formatter = logging.Formatter(
         "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
         datefmt="%H:%M:%S",
     )
 
-    console_handler.setFormatter(console_formatter)
+    console_handler.setFormatter(
+        console_formatter
+    )
 
     synchronization_logger.addHandler(
         console_handler
     )
+
+
+# ----------------------------------------------------------
+# Configuration
+# ----------------------------------------------------------
+
+hosts_config = HostsConfig()
+
+system_config = SystemConfig()
 
 
 # ----------------------------------------------------------
@@ -57,14 +74,13 @@ if not synchronization_logger.handlers:
 
 synchronization_service = SynchronizationService()
 
-hosts_config = HostsConfig()
-
 synchronization_thread: threading.Thread | None = None
 
 
 def start_synchronization_scheduler() -> None:
     """
-    Start the continuous per-server synchronization scheduler.
+    Start the continuous synchronization scheduler using
+    settings from system.config.
     """
 
     global synchronization_thread
@@ -75,11 +91,43 @@ def start_synchronization_scheduler() -> None:
     ):
         return
 
+    synchronization_enabled = (
+        system_config.is_enabled()
+    )
+
+    if not synchronization_enabled:
+
+        synchronization_logger.info(
+            "Synchronization is globally disabled "
+            "in system.config."
+        )
+
+        return
+
+    scheduler_check_interval = (
+        system_config.get_scheduler_check_interval()
+    )
+
+    default_interval = (
+        system_config.get_default_interval()
+    )
+
+    synchronization_logger.info(
+        "System synchronization configuration loaded: "
+        "enabled=%s, default_interval=%ss, "
+        "scheduler_check_interval=%ss",
+        synchronization_enabled,
+        default_interval,
+        scheduler_check_interval,
+    )
+
     synchronization_thread = threading.Thread(
         target=synchronization_service.start_continuous_sync,
         kwargs={
             "sources_provider": hosts_config.get_all,
-            "check_interval": 1.0,
+            "check_interval": float(
+                scheduler_check_interval
+            ),
         },
         daemon=True,
         name="LogLlamalyzer-Synchronization",
@@ -111,6 +159,11 @@ async def lifespan(app: FastAPI):
     app.state.synchronization_service = (
         synchronization_service
     )
+
+    # Make configuration managers available to the
+    # application if other components need them.
+    app.state.hosts_config = hosts_config
+    app.state.system_config = system_config
 
     start_synchronization_scheduler()
 
