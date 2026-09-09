@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -14,15 +16,23 @@
         rel="stylesheet"
         href="style.css"
     >
+
 </head>
+
 
 <body>
 
     <main class="container">
 
+        <!-- ==================================================
+             HEADER
+             ================================================== -->
+
         <header class="header">
 
-            <h1>LogLlamalyzer</h1>
+            <h1>
+                LogLlamalyzer
+            </h1>
 
             <p>
                 AI-Powered Security Log Analysis
@@ -30,6 +40,10 @@
 
         </header>
 
+
+        <!-- ==================================================
+             QUERY SECTION
+             ================================================== -->
 
         <section class="query-section">
 
@@ -43,12 +57,14 @@
                 rows="5"
             ></textarea>
 
+
             <button
                 id="analyze-button"
                 type="button"
             >
                 Analyse Security
             </button>
+
 
             <p
                 id="status"
@@ -58,9 +74,97 @@
         </section>
 
 
-        <section class="result-section">
+        <!-- ==================================================
+             ANALYSE SECTION
+             ================================================== -->
 
-            <h2>Security Analysis</h2>
+        <section class="analyse-section">
+
+            <h2>
+                Analyse
+            </h2>
+
+            <p>
+                Submit a security query to analyse
+                the synchronized log data.
+            </p>
+
+        </section>
+
+
+        <!-- ==================================================
+             QUANTITATIVE ANALYSIS
+             ================================================== -->
+
+        <section class="quantitative-section">
+
+            <h2>
+                Quantitative Analysis
+            </h2>
+
+            <div class="quantitative-grid">
+
+                <div class="quantitative-item">
+
+                    <span class="quantitative-label">
+                        Security Evidence
+                    </span>
+
+                    <span
+                        id="log-evidence-count"
+                        class="quantitative-value"
+                    >
+                        0
+                    </span>
+
+                </div>
+
+
+                <div class="quantitative-item">
+
+                    <span class="quantitative-label">
+                        Knowledge Evidence
+                    </span>
+
+                    <span
+                        id="knowledge-evidence-count"
+                        class="quantitative-value"
+                    >
+                        0
+                    </span>
+
+                </div>
+
+
+                <div class="quantitative-item">
+
+                    <span class="quantitative-label">
+                        Query-Related Logs
+                    </span>
+
+                    <span
+                        id="related-log-count"
+                        class="quantitative-value"
+                    >
+                        0
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================
+             SECURITY ANALYSIS
+             ================================================== -->
+
+        <section class="security-analysis-section">
+
+            <h2>
+                Security Analysis
+            </h2>
 
             <div
                 id="result"
@@ -71,10 +175,306 @@
 
         </section>
 
+
+        <!-- ==================================================
+             RSYNC STATUS
+             ================================================== -->
+
+        <section class="sync-section">
+
+            <h2>
+                Rsync Status
+            </h2>
+
+            <p>
+                Synchronization activity will appear here.
+            </p>
+
+            <div
+                id="sync-status-list"
+                class="sync-status-list"
+            >
+                No synchronization activity yet.
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================
+             SERVER MANAGEMENT
+             ================================================== -->
+
+        <section class="server-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        Server Management
+                    </h2>
+
+                    <p>
+                        Add, edit or delete synchronized servers.
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="add-server-button"
+                    type="button"
+                    class="primary-button"
+                >
+                    Add Server
+                </button>
+
+            </div>
+
+
+            <!-- ------------------------------------------------
+                 SERVER LIST
+                 ------------------------------------------------ -->
+
+            <div class="server-slider">
+
+                <button
+                    type="button"
+                    class="slider-button"
+                    id="previous-server-button"
+                    aria-label="Previous servers"
+            >
+                    &#10094;
+                </button>
+
+                <div
+                    class="server-slider-viewport"
+                    id="server-slider-viewport"
+                >
+                    <div
+                        class="server-slider-track"
+                        id="server-list"
+                    ></div>
+                </div>
+
+                <button
+                    type="button"
+                    class="slider-button"
+                    id="next-server-button"
+                    aria-label="Next servers"
+                >
+                    &#10095;
+                </button>
+
+            </div>
+
+
+            <!-- ------------------------------------------------
+                 SERVER FORM
+                 ------------------------------------------------ -->
+
+            <div
+                id="server-form-container"
+                class="server-form-container"
+                style="display: none;"
+            >
+
+                <h3 id="server-form-title">
+                    Add Server
+                </h3>
+
+
+                <form
+                    id="server-form"
+                    onsubmit="return false;"
+                >
+
+                    <!-- Server ID + Host -->
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label for="server-source-id">
+                                Server ID
+                            </label>
+
+                            <input
+                                type="text"
+                                id="server-source-id"
+                                placeholder="server-1"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="server-host">
+                                IP Address / Host
+                            </label>
+
+                            <input
+                                type="text"
+                                id="server-host"
+                                placeholder="192.168.1.10"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Username + Log Path -->
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label for="server-username">
+                                SSH Username
+                            </label>
+
+                            <input
+                                type="text"
+                                id="server-username"
+                                placeholder="user"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="server-remote-path">
+                                Log Path
+                            </label>
+
+                            <input
+                                type="text"
+                                id="server-remote-path"
+                                placeholder="/var/log/"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Local Path + Rsync Interval -->
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label for="server-local-path">
+                                Local Path
+                            </label>
+
+                            <input
+                                type="text"
+                                id="server-local-path"
+                                value="./data/servers/"
+                                readonly
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="server-sync-interval">
+                                Rsync Interval (seconds)
+                            </label>
+
+                            <input
+                                type="number"
+                                id="server-sync-interval"
+                                min="1"
+                                value="60"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Enable Synchronization -->
+
+                    <div class="checkbox-group">
+
+                        <input
+                            type="checkbox"
+                            id="server-enabled"
+                            checked
+                        >
+
+                        <label for="server-enabled">
+                            Enable synchronization
+                        </label>
+
+                    </div>
+
+
+                    <!-- Form Buttons -->
+
+                    <div class="form-actions">
+
+                        <button
+                            id="save-server-button"
+                            type="button"
+                            class="primary-button"
+                        >
+                            Add Server
+                        </button>
+
+
+                        <button
+                            id="cancel-server-button"
+                            type="button"
+                            class="secondary-button"
+                        >
+                            Cancel
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================
+             QUERY-RELATED LOGS
+             ================================================== -->
+
+        <section class="logs-section">
+
+            <h2>
+                Query-Related Logs
+            </h2>
+
+            <div
+                id="related-logs"
+                class="related-logs"
+            >
+                Query-related log evidence will appear here.
+            </div>
+
+        </section>
+
     </main>
 
 
     <script src="script.js"></script>
 
 </body>
+
 </html>

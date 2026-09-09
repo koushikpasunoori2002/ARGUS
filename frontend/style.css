@@ -5,12 +5,13 @@
 :root {
     --navy: #172b4d;
     --blue: #2563eb;
-    --blue-light: #eff6ff;
+    --blue-dark: #1d4ed8;
     --text: #172033;
     --secondary: #64748b;
     --border: #dbe2ea;
     --background: #f4f7fb;
     --white: #ffffff;
+    --light: #f8fafc;
 }
 
 body {
@@ -34,14 +35,29 @@ body {
 
 
 /* =========================================================
-   PAGE CONTAINER
+   MAIN GRID
    ========================================================= */
 
 .container {
-    width: 92%;
-    max-width: 980px;
+    width: 94%;
+    max-width: 1240px;
 
-    margin: 38px auto 60px;
+    margin: 28px auto 50px;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.05fr)
+        minmax(400px, 0.95fr);
+
+    grid-template-areas:
+        "header header"
+        "query sync"
+        "analyse server"
+        "quantitative server"
+        "security logs";
+
+    gap: 16px;
 }
 
 
@@ -50,11 +66,11 @@ body {
    ========================================================= */
 
 .header {
+    grid-area: header;
+
     position: relative;
 
-    padding: 27px 30px;
-
-    margin-bottom: 25px;
+    padding: 25px 28px;
 
     background: var(--navy);
 
@@ -63,13 +79,11 @@ body {
     color: white;
 
     box-shadow:
-        0 5px 18px rgba(23, 43, 77, 0.16);
+        0 5px 18px
+        rgba(23, 43, 77, 0.16);
 
     overflow: hidden;
 }
-
-
-/* subtle decorative element */
 
 .header::after {
     content: "";
@@ -84,9 +98,10 @@ body {
 
     border-radius: 50%;
 
-    border: 28px solid rgba(255, 255, 255, 0.05);
+    border:
+        28px solid
+        rgba(255, 255, 255, 0.05);
 }
-
 
 .header h1 {
     position: relative;
@@ -97,31 +112,33 @@ body {
 
     font-weight: 600;
 
-    letter-spacing: -0.4px;
-
     z-index: 1;
 }
-
 
 .header p {
     position: relative;
 
     margin: 0;
 
-    color: #c8d4e5;
-
     font-size: 14px;
+
+    color: #c8d4e5;
 
     z-index: 1;
 }
 
 
 /* =========================================================
-   CARDS
+   COMMON SECTIONS
    ========================================================= */
 
 .query-section,
-.result-section {
+.analyse-section,
+.quantitative-section,
+.security-analysis-section,
+.sync-section,
+.server-section,
+.logs-section {
 
     background: var(--white);
 
@@ -129,11 +146,7 @@ body {
         1px solid
         var(--border);
 
-    border-radius: 12px;
-
-    padding: 26px 28px;
-
-    margin-bottom: 22px;
+    border-radius: 10px;
 
     box-shadow:
         0 2px 7px
@@ -142,40 +155,118 @@ body {
 
 
 /* =========================================================
-   QUERY SECTION
+   GRID AREAS
    ========================================================= */
 
 .query-section {
+    grid-area: query;
+
+    padding: 22px;
+
     border-top:
         3px solid
         var(--blue);
 }
 
+.analyse-section {
+    grid-area: analyse;
 
-label {
-    display: block;
+    padding: 14px 22px;
+}
 
-    margin-bottom: 10px;
+.quantitative-section {
+    grid-area: quantitative;
 
-    font-size: 15px;
+    padding: 22px;
 
-    font-weight: 600;
+    border-top:
+        3px solid
+        var(--blue);
+}
 
-    color: #25324a;
+.security-analysis-section {
+    grid-area: security;
+
+    padding: 22px;
+
+    min-height: 260px;
+}
+
+.sync-section {
+    grid-area: sync;
+
+    padding: 22px;
+
+    border-top:
+        3px solid
+        var(--blue);
+}
+
+.server-section {
+    grid-area: server;
+
+    padding: 22px;
+
+    border-top:
+        3px solid
+        var(--blue);
+}
+
+.logs-section {
+    grid-area: logs;
+
+    padding: 22px;
+
+    min-height: 260px;
 }
 
 
 /* =========================================================
-   TEXTAREA
+   SECTION TITLES
+   ========================================================= */
+
+.section-title {
+    margin-bottom: 12px;
+
+    font-size: 18px;
+
+    font-weight: 600;
+
+    color: #1e293b;
+}
+
+section h2 {
+    margin: 0 0 8px;
+
+    font-size: 18px;
+
+    font-weight: 600;
+
+    color: #1e293b;
+}
+
+.section-description,
+.server-section .section-header p,
+.logs-section .section-header p {
+
+    margin: 0;
+
+    font-size: 13px;
+
+    color: var(--secondary);
+}
+
+
+/* =========================================================
+   QUERY
    ========================================================= */
 
 textarea {
-
     width: 100%;
 
     min-height: 135px;
 
-    padding: 15px 16px;
+    padding: 14px 15px;
 
     resize: vertical;
 
@@ -184,7 +275,7 @@ textarea {
         Helvetica,
         sans-serif;
 
-    font-size: 15px;
+    font-size: 14px;
 
     line-height: 1.55;
 
@@ -196,27 +287,13 @@ textarea {
         1px solid
         #cbd5e1;
 
-    border-radius: 9px;
+    border-radius: 8px;
 
     outline: none;
-
-    transition:
-        background 0.15s ease,
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
 }
-
-
-textarea:hover {
-    background: #ffffff;
-
-    border-color: #aebdce;
-}
-
 
 textarea:focus {
-
-    background: #ffffff;
+    background: white;
 
     border-color: var(--blue);
 
@@ -225,21 +302,17 @@ textarea:focus {
         rgba(37, 99, 235, 0.10);
 }
 
-
 textarea::placeholder {
     color: #94a3b8;
 }
 
 
 /* =========================================================
-   BUTTON
+   BUTTONS
    ========================================================= */
 
 button {
-
-    margin-top: 15px;
-
-    padding: 11px 20px;
+    padding: 10px 18px;
 
     border: none;
 
@@ -249,7 +322,7 @@ button {
 
     color: white;
 
-    font-size: 14px;
+    font-size: 13px;
 
     font-weight: 600;
 
@@ -261,40 +334,25 @@ button {
 
     transition:
         background 0.15s ease,
-        transform 0.15s ease,
-        box-shadow 0.15s ease;
+        transform 0.15s ease;
 }
-
 
 button:hover {
-
-    background: #1d4ed8;
+    background: var(--blue-dark);
 
     transform: translateY(-1px);
-
-    box-shadow:
-        0 4px 10px
-        rgba(37, 99, 235, 0.25);
 }
-
-
-button:active {
-
-    transform: translateY(0);
-
-    box-shadow: none;
-}
-
 
 button:disabled {
+    opacity: 0.55;
 
     cursor: not-allowed;
 
-    opacity: 0.55;
-
     transform: none;
+}
 
-    box-shadow: none;
+#analyze-button {
+    width: 100%;
 }
 
 
@@ -303,83 +361,67 @@ button:disabled {
    ========================================================= */
 
 .status {
+    min-height: 18px;
 
-    display: flex;
+    margin: 9px 0 0;
 
-    align-items: center;
-
-    gap: 8px;
-
-    min-height: 20px;
-
-    margin-top: 13px;
-
-    font-size: 13px;
+    font-size: 12px;
 
     color: var(--secondary);
 }
 
 
-.status:not(:empty)::before {
-
-    content: "";
-
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-
-    background: #16a34a;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(22, 163, 74, 0.10);
-}
-
-
 /* =========================================================
-   RESULT HEADER
+   QUANTITATIVE ANALYSIS
    ========================================================= */
 
-.result-section h2 {
-
+.metric-row {
     display: flex;
-
-    align-items: center;
 
     justify-content: space-between;
 
-    margin: 0 0 17px;
+    align-items: center;
 
-    padding-bottom: 14px;
+    padding: 13px 14px;
 
-    border-bottom:
+    margin-top: 10px;
+
+    background: var(--light);
+
+    border:
         1px solid
-        #e5eaf0;
+        #e2e8f0;
 
+    border-radius: 7px;
+
+    font-size: 13px;
+
+    color: #475569;
+}
+
+.metric-row strong {
     font-size: 18px;
 
-    font-weight: 600;
-
-    color: #1e293b;
+    color: var(--blue);
 }
 
 
 /* =========================================================
-   RESULT BOX
+   SECURITY ANALYSIS
    ========================================================= */
 
 .result {
+    min-height: 185px;
 
-    min-height: 170px;
-
-    padding: 19px;
+    padding: 17px;
 
     white-space: pre-wrap;
 
+    overflow-wrap: anywhere;
+
     line-height: 1.65;
 
-    font-size: 14px;
+    font-size: 13px;
 
     color: #334155;
 
@@ -390,22 +432,374 @@ button:disabled {
         1px solid
         #e2e8f0;
 
-    border-radius: 9px;
+    border-radius: 8px;
 }
 
 
 /* =========================================================
-   RESULT BOX WHEN CONTENT EXISTS
+   RSYNC STATUS
    ========================================================= */
 
-.result:not(:empty) {
+.sync-status-list {
+    display: flex;
 
-    background:
-        linear-gradient(
-            135deg,
-            #f8fbff,
-            #f5f8fc
-        );
+    flex-direction: column;
+
+    gap: 9px;
+
+    margin-top: 15px;
+}
+
+.sync-status-card {
+    padding: 12px 14px;
+
+    background: var(--light);
+
+    border:
+        1px solid
+        #e2e8f0;
+
+    border-radius: 7px;
+}
+
+.sync-status-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 5px;
+}
+
+.sync-status-name {
+    font-size: 13px;
+
+    font-weight: 600;
+
+    color: #1e293b;
+}
+
+.sync-status-time {
+    font-size: 12px;
+
+    color: var(--secondary);
+}
+
+.sync-status-state {
+    font-size: 12px;
+
+    color: #475569;
+}
+
+.refresh-label {
+    margin: 12px 0 0;
+
+    text-align: right;
+
+    font-size: 11px;
+
+    color: #94a3b8;
+}
+
+
+/* =========================================================
+   SERVER MANAGEMENT
+   ========================================================= */
+
+.section-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 16px;
+}
+
+.server-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+}
+
+.server-card {
+    padding: 13px 14px;
+
+    background: var(--light);
+
+    border:
+        1px solid
+        #e2e8f0;
+
+    border-radius: 7px;
+}
+
+.server-card-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 12px;
+}
+
+.server-card h3 {
+    margin: 0 0 4px;
+
+    font-size: 14px;
+
+    color: #1e293b;
+}
+
+.server-card p {
+    margin: 3px 0;
+
+    font-size: 12px;
+
+    color: var(--secondary);
+
+    overflow-wrap: anywhere;
+}
+
+.server-actions {
+    display: flex;
+
+    gap: 6px;
+}
+
+.server-actions button {
+    padding: 7px 11px;
+
+    font-size: 11px;
+}
+
+.edit-server-button {
+    background: #475569;
+}
+
+.edit-server-button:hover {
+    background: #334155;
+}
+
+.delete-server-button {
+    background: #dc2626;
+}
+
+.delete-server-button:hover {
+    background: #b91c1c;
+}
+
+
+/* =========================================================
+   SERVER FORM
+   ========================================================= */
+
+.server-form-container {
+    margin-top: 15px;
+
+    padding: 16px;
+
+    background: #fbfcfe;
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius: 8px;
+}
+
+.server-form-container h3 {
+    margin: 0 0 15px;
+
+    font-size: 15px;
+
+    color: #1e293b;
+}
+
+.form-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+.form-field {
+    display: flex;
+
+    flex-direction: column;
+}
+
+.form-field label {
+    margin-bottom: 6px;
+
+    font-size: 12px;
+
+    color: #334155;
+}
+
+.form-field input {
+    width: 100%;
+
+    padding: 9px 10px;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 12px;
+
+    border:
+        1px solid
+        #cbd5e1;
+
+    border-radius: 6px;
+
+    outline: none;
+}
+
+.form-field input:focus {
+    border-color: var(--blue);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(37, 99, 235, 0.10);
+}
+
+.checkbox-field {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 13px;
+
+    font-size: 12px;
+
+    color: #475569;
+}
+
+.checkbox-field input {
+    width: 15px;
+    height: 15px;
+}
+
+.form-actions {
+    display: flex;
+
+    gap: 8px;
+
+    margin-top: 15px;
+}
+
+.form-actions button {
+    margin: 0;
+}
+
+#cancel-server-button {
+    background: #64748b;
+}
+
+#cancel-server-button:hover {
+    background: #475569;
+}
+
+
+/* =========================================================
+   QUERY-RELATED LOGS
+   ========================================================= */
+
+.count-badge {
+    padding: 5px 9px;
+
+    background: var(--blue-light);
+
+    border-radius: 999px;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    color: var(--blue);
+}
+
+.related-logs {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    margin-top: 15px;
+
+    max-height: 300px;
+
+    overflow-y: auto;
+}
+
+.log-entry {
+    padding: 11px 13px;
+
+    background: var(--light);
+
+    border:
+        1px solid
+        #e2e8f0;
+
+    border-radius: 7px;
+
+    white-space: pre-wrap;
+
+    overflow-wrap: anywhere;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+    color: #334155;
+}
+
+
+/* =========================================================
+   EMPTY STATES
+   ========================================================= */
+
+.empty-message {
+    padding: 20px;
+
+    text-align: center;
+
+    font-size: 12px;
+
+    color: var(--secondary);
+
+    background: var(--light);
+
+    border:
+        1px dashed
+        #cbd5e1;
+
+    border-radius: 7px;
+}
+
+
+/* =========================================================
+   VISIBILITY
+   ========================================================= */
+
+.hidden {
+    display: none;
 }
 
 
@@ -414,7 +808,7 @@ button:disabled {
    ========================================================= */
 
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -427,52 +821,80 @@ button:disabled {
     border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
-
-/* =========================================================
-   TEXT SELECTION
-   ========================================================= */
-
-::selection {
-    background: #dbeafe;
-
-    color: #172033;
-}
-
 
 /* =========================================================
    RESPONSIVE
    ========================================================= */
 
-@media (max-width: 700px) {
-
-    body {
-        background: #f4f7fb;
-    }
+@media (max-width: 800px) {
 
     .container {
         width: 94%;
 
-        margin-top: 22px;
+        grid-template-columns: 1fr;
+
+        grid-template-areas:
+            "header"
+            "query"
+            "analyse"
+            "quantitative"
+            "security"
+            "sync"
+            "server"
+            "logs";
     }
 
-    .header {
-        padding: 23px 20px;
+    .form-grid {
+        grid-template-columns: 1fr;
     }
 
-    .header h1 {
-        font-size: 27px;
+    .section-header,
+    .server-card-header {
+        flex-direction: column;
+
+        align-items: stretch;
     }
 
-    .query-section,
-    .result-section {
-        padding: 21px;
-    }
-
-    button {
+    .server-actions {
         width: 100%;
     }
+
+    .server-actions button {
+        flex: 1;
+    }
+}
+/* ==========================================================
+   Server Management Vertical Slider
+   ========================================================== */
+
+.server-slider {
+    display: flex;
+    width: 100%;
+}
+
+.server-slider-viewport {
+    width: 100%;
+    height: 470px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    box-sizing: border-box;
+}
+
+/* Keep server cards stacked vertically */
+.server-slider-track {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+/* Hide the old left/right slider buttons */
+.slider-button {
+    display: none;
+}
+
+/* Make the scrollbar subtle */
+.server-slider-viewport {
+    scrollbar-width: thin;
 }

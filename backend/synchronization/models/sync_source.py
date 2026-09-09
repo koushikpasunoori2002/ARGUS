@@ -10,8 +10,8 @@ class SyncSource:
     """
     Represents one configured synchronization source.
 
-    This model contains connection and filesystem information only.
-    Scheduling and synchronization execution are handled separately.
+    The source contains connection, filesystem, and
+    synchronization scheduling information.
     """
 
     source_id: str
@@ -21,6 +21,7 @@ class SyncSource:
     remote_path: str
     local_path: str
     enabled: bool = True
+    sync_interval: int = 60
 
     def __post_init__(self) -> None:
         """Validate the source configuration."""
@@ -35,14 +36,30 @@ class SyncSource:
         }
 
         for field_name, value in fields.items():
-            if not isinstance(value, str) or not value.strip():
+
+            if (
+                not isinstance(value, str)
+                or not value.strip()
+            ):
                 raise ValueError(
                     f"{field_name} must be a non-empty string."
                 )
 
         if not isinstance(self.enabled, bool):
+
             raise TypeError(
                 "enabled must be a boolean."
+            )
+
+        if (
+            not isinstance(self.sync_interval, int)
+            or isinstance(self.sync_interval, bool)
+            or self.sync_interval < 1
+        ):
+
+            raise ValueError(
+                "sync_interval must be an integer "
+                "greater than 0."
             )
 
     @property
@@ -67,4 +84,5 @@ class SyncSource:
             "remote_path": self.remote_path,
             "local_path": self.local_path,
             "enabled": self.enabled,
+            "sync_interval": self.sync_interval,
         }

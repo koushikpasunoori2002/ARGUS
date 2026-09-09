@@ -1,62 +1,72 @@
 """
-schemas.py
-
-Pydantic request and response models for the LogLlamalyzer API.
+Pydantic schemas used by the FastAPI backend.
 """
 
 from pydantic import BaseModel, Field
 
 
 class AnalyzeRequest(BaseModel):
-    """
-    Request model for security analysis.
-    """
+    """Request schema for security analysis queries."""
 
-    query: str
+    query: str = Field(
+        ...,
+        min_length=1,
+        description="Security-related query to analyse.",
+    )
 
 
 class AnalyzeResponse(BaseModel):
-    """
-    Response model returned by the analysis endpoint.
-    """
+    """Response schema returned by the analysis endpoint."""
 
-    query: str
     answer: str
 
 
 class ServerSchema(BaseModel):
-    """
-    Server configuration model.
-    """
+    """Schema representing a synchronisation server."""
 
     source_id: str = Field(
+        ...,
         min_length=1,
         description="Unique identifier for the server.",
     )
 
     name: str = Field(
+        ...,
         min_length=1,
         description="Display name of the server.",
     )
 
     host: str = Field(
+        ...,
         min_length=1,
-        description="Hostname or IP address.",
+        description="Server hostname or IP address.",
     )
 
     username: str = Field(
+        ...,
         min_length=1,
-        description="SSH username.",
+        description="SSH username used for synchronisation.",
     )
 
     remote_path: str = Field(
+        ...,
         min_length=1,
         description="Remote log directory.",
     )
 
     local_path: str = Field(
+        ...,
         min_length=1,
-        description="Local synchronization directory.",
+        description="Local directory used for synchronised logs.",
     )
 
-    enabled: bool = True
+    enabled: bool = Field(
+        default=True,
+        description="Whether synchronisation is enabled.",
+    )
+
+    sync_interval: int = Field(
+        default=60,
+        gt=0,
+        description="Synchronisation interval in seconds.",
+    )

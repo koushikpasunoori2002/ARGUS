@@ -1,5 +1,6 @@
 """
 rsync_executor.py
+
 Provides a reusable wrapper for executing rsync through WSL
 on Windows.
 """
@@ -26,15 +27,39 @@ class RsyncExecutor:
     """
     Executes rsync through WSL.
 
-    This class is responsible only for executing one rsync operation.
-    Server management, scheduling, configuration and frontend control
-    will be implemented in later phases.
+    The executor is responsible only for executing one rsync
+    operation and preventing an unreachable server from blocking
+    the synchronization scheduler indefinitely.
     """
 
-    def __init__(self) -> None:
-        self.command = ["wsl", "rsync"]
+    def __init__(
+        self,
+        timeout: int = 30,
+    ) -> None:
+        """
+        Initialise the rsync executor.
 
-    def _to_wsl_path(self, path: str | Path) -> str:
+        timeout:
+            Maximum number of seconds allowed for one rsync
+            operation.
+        """
+
+        if (
+            not isinstance(timeout, int)
+            or isinstance(timeout, bool)
+            or timeout <= 0
+        ):
+            raise ValueError(
+                "timeout must be an integer greater than 0."
+            )
+
+        self.command = ["wsl", "rsync"]
+        self.timeout = timeout
+
+    def _to_wsl_path(
+        self,
+        path: str | Path,
+    ) -> str:
         """
         Convert a Windows path to a WSL path.
 
@@ -43,32 +68,46 @@ class RsyncExecutor:
 
         path_string = str(path)
 
-        # Already a WSL/Linux path
+        # Already a WSL/Linux path.
         if path_string.startswith("/"):
             return path_string
 
         # Windows drive path, e.g. C:\Users\...
-        if len(path_string) >= 2 and path_string[1] == ":":
+        if (
+            len(path_string) >= 2
+            and path_string[1] == ":"
+        ):
             drive = path_string[0].lower()
-            remainder = path_string[2:].replace("\\", "/")
+
+            remainder = (
+                path_string[2:]
+                .replace("\\", "/")
+            )
 
             return f"/mnt/{drive}{remainder}"
 
         return path_string
-
 
     def sync(
         self,
         source: str,
         destination: str | Path,
         options: Sequence[str] | None = None,
-) ->     RsyncResult:
+    ) -> RsyncResult:
         """
         Execute one rsync operation.
+
+        The operation is automatically terminated when the
+        configured timeout is exceeded.
         """
 
-        if not isinstance(source, str) or not source.strip():
-            raise ValueError("source must be a non-empty string.")
+        if (
+            not isinstance(source, str)
+            or not source.strip()
+        ):
+            raise ValueError(
+                "source must be a non-empty string."
+            )
 
         destination_path = Path(destination)
 
@@ -77,8 +116,13 @@ class RsyncExecutor:
             exist_ok=True,
         )
 
-        wsl_source = self._to_wsl_path(source)
-        wsl_destination = self._to_wsl_path(destination_path)
+        wsl_source = self._to_wsl_path(
+            source
+        )
+
+        wsl_destination = self._to_wsl_path(
+            destination_path
+        )
 
         command = [
             *self.command,
@@ -96,14 +140,52 @@ class RsyncExecutor:
         )
 
         try:
+
             completed = subprocess.run(
                 command,
                 capture_output=True,
                 text=True,
                 check=False,
+                timeout=self.timeout,
             )
 
-        except (FileNotFoundError, OSError) as exc:
+        except subprocess.TimeoutExpired as exc:
+
+            stdout = (
+                exc.stdout
+                if isinstance(exc.stdout, str)
+                else ""
+            )
+
+            stderr = (
+                exc.stderr
+                if isinstance(exc.stderr, str)
+                else ""
+            )
+
+            timeout_message = (
+                f"rsync operation timed out after "
+                f"{self.timeout} seconds."
+            )
+
+            if stderr.strip():
+                timeout_message = (
+                    f"{timeout_message} "
+                    f"{stderr.strip()}"
+                )
+
+            return RsyncResult(
+                success=False,
+                return_code=-3,
+                stdout=stdout.strip(),
+                stderr=timeout_message,
+            )
+
+        except (
+            FileNotFoundError,
+            OSError,
+        ) as exc:
+
             return RsyncResult(
                 success=False,
                 return_code=-1,
@@ -119,9 +201,12 @@ class RsyncExecutor:
         )
 
     def is_available(self) -> bool:
-        """Return True when WSL rsync is available."""
+        """
+        Return True when WSL rsync is available.
+        """
 
         try:
+
             completed = subprocess.run(
                 [
                     *self.command,
@@ -130,8 +215,14 @@ class RsyncExecutor:
                 capture_output=True,
                 text=True,
                 check=False,
+                timeout=self.timeout,
             )
-        except (FileNotFoundError, OSError):
+
+        except (
+            FileNotFoundError,
+            OSError,
+            subprocess.TimeoutExpired,
+        ):
             return False
 
         return completed.returncode == 0
