@@ -4,6 +4,8 @@ parser_factory.py
 Factory for creating log parser instances.
 """
 
+from backend.config.log_types_config import LogTypesConfig
+
 from .auth_parser import AuthParser
 from .syslog_parser import SyslogParser
 from .kern_parser import KernParser
@@ -12,34 +14,78 @@ from .dmesg_parser import DmesgParser
 
 
 class ParserFactory:
-    """Creates the appropriate parser for a detected log type."""
+    """
+    Creates the appropriate parser for a configured log type.
+    """
 
-    _PARSERS = {
-        "auth": AuthParser,
-        "syslog": SyslogParser,
-        "kern": KernParser,
-        "dpkg": DpkgParser,
-        "dmesg": DmesgParser,
+    _AVAILABLE_PARSERS = {
+        "AuthParser": AuthParser,
+        "SyslogParser": SyslogParser,
+        "KernParser": KernParser,
+        "DpkgParser": DpkgParser,
+        "DmesgParser": DmesgParser,
     }
 
     @classmethod
     def create(cls, log_type: str):
         """
-        Create a parser for the specified log type.
+        Create a parser for the specified configured log type.
 
-        Args:
-            log_type: Detected log type.
+        Parameters
+        ----------
+        log_type : str
+            Log type detected by FileDetector.
 
-        Returns:
-            An instance of the corresponding parser.
+        Returns
+        -------
+        BaseParser
+            Instance of the configured parser.
 
-        Raises:
-            ValueError: If no parser is registered for the given log type.
+        Raises
+        ------
+        TypeError
+            If log_type is not a string.
+        ValueError
+            If the log type is not configured or the configured
+            parser is not available.
         """
 
-        parser_class = cls._PARSERS.get(log_type)
+        if not isinstance(
+            log_type,
+            str,
+        ):
+            raise TypeError(
+                "log_type must be a string."
+            )
+
+        log_type = log_type.strip()
+
+        if not log_type:
+            raise ValueError(
+                "log_type cannot be empty."
+            )
+
+        config = LogTypesConfig()
+
+        try:
+            parser_name = config.get_parser_name(
+                log_type
+            )
+
+        except KeyError as exc:
+            raise ValueError(
+                f"No parser configured for log type: "
+                f"'{log_type}'."
+            ) from exc
+
+        parser_class = cls._AVAILABLE_PARSERS.get(
+            parser_name
+        )
 
         if parser_class is None:
-            raise ValueError(f"No parser registered for log type: '{log_type}'.")
+            raise ValueError(
+                f"Configured parser '{parser_name}' "
+                f"for log type '{log_type}' is not available."
+            )
 
         return parser_class()
