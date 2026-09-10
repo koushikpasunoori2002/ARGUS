@@ -27,9 +27,8 @@ class RsyncExecutor:
     """
     Executes rsync through WSL.
 
-    The executor accepts rsync options from the configured
-    synchronization source, allowing each server to define
-    its own rsync behaviour.
+    Relative local paths are resolved against the project root
+    before being converted to WSL paths.
     """
 
     def __init__(
@@ -38,10 +37,6 @@ class RsyncExecutor:
     ) -> None:
         """
         Initialise the rsync executor.
-
-        timeout:
-            Maximum number of seconds allowed for one rsync
-            operation.
         """
 
         if (
@@ -56,37 +51,63 @@ class RsyncExecutor:
         self.command = ["wsl", "rsync"]
         self.timeout = timeout
 
+        self.project_root = (
+            Path(__file__)
+            .resolve()
+            .parents[2]
+        )
+
     def _to_wsl_path(
         self,
         path: str | Path,
     ) -> str:
         """
-        Convert a Windows path to a WSL path.
-
-        Linux/WSL paths are returned unchanged.
+        Convert a Windows or project-relative path to
+        a WSL-compatible path.
         """
 
         path_string = str(path)
 
-        # Already a WSL/Linux path.
+        # Already a Linux/WSL absolute path.
         if path_string.startswith("/"):
             return path_string
 
-        # Windows drive path, e.g. C:\Users\...
+        # Windows absolute path.
         if (
             len(path_string) >= 2
             and path_string[1] == ":"
         ):
-            drive = path_string[0].lower()
+            windows_path = Path(path_string).resolve()
 
-            remainder = (
-                path_string[2:]
-                .replace("\\", "/")
+        else:
+            # Resolve project-relative paths against the
+            # LogLlamalyzer project root.
+            windows_path = (
+                self.project_root / path_string
+            ).resolve()
+
+        windows_string = str(
+            windows_path
+        ).replace("\\", "/")
+
+        # Convert C:/Users/... to /mnt/c/Users/...
+        if (
+            len(windows_string) >= 2
+            and windows_string[1] == ":"
+        ):
+            drive = windows_string[0].lower()
+
+            remainder = windows_string[2:]
+
+            if not remainder.startswith("/"):
+                remainder = "/" + remainder
+
+            return (
+                f"/mnt/{drive}"
+                f"{remainder}"
             )
 
-            return f"/mnt/{drive}{remainder}"
-
-        return path_string
+        return windows_string
 
     def sync(
         self,
@@ -96,8 +117,6 @@ class RsyncExecutor:
     ) -> RsyncResult:
         """
         Execute one rsync operation.
-
-        The caller can provide custom rsync options.
         """
 
         if (
@@ -108,7 +127,9 @@ class RsyncExecutor:
                 "source must be a non-empty string."
             )
 
-        destination_path = Path(destination)
+        destination_path = Path(
+            destination
+        )
 
         destination_path.mkdir(
             parents=True,
@@ -123,9 +144,7 @@ class RsyncExecutor:
             destination_path
         )
 
-        # Use configured options when supplied.
-        # Fall back to the standard archive, verbose,
-        # and compression flags.
+        # Use supplied options or the standard default.
         rsync_options = (
             list(options)
             if options
@@ -153,13 +172,19 @@ class RsyncExecutor:
 
             stdout = (
                 exc.stdout
-                if isinstance(exc.stdout, str)
+                if isinstance(
+                    exc.stdout,
+                    str,
+                )
                 else ""
             )
 
             stderr = (
                 exc.stderr
-                if isinstance(exc.stderr, str)
+                if isinstance(
+                    exc.stderr,
+                    str,
+                )
                 else ""
             )
 

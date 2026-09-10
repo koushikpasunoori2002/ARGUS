@@ -20,27 +20,51 @@ class SyncStatus:
     last_successful_at: datetime | None = None
     error_message: str | None = None
 
+    def mark_running(self) -> None:
+        """
+        Record that synchronization has started.
+
+        last_attempted_at represents the time at which
+        the synchronization attempt began.
+        """
+
+        now = datetime.now().astimezone()
+
+        self.status = "running"
+        self.last_attempted_at = now
+        self.error_message = None
+
     def mark_success(self) -> None:
-        """Record a successful synchronization."""
+        """
+        Record a successful synchronization.
+
+        last_attempted_at is preserved from mark_running().
+        last_successful_at records the completion time.
+        """
 
         now = datetime.now().astimezone()
 
         self.status = "success"
-        self.last_attempted_at = now
         self.last_successful_at = now
         self.error_message = None
 
-    def mark_failure(self, error_message: str) -> None:
-        """Record a failed synchronization."""
+    def mark_failure(
+        self,
+        error_message: str,
+    ) -> None:
+        """
+        Record a failed synchronization.
 
-        now = datetime.now().astimezone()
+        last_attempted_at is preserved from mark_running().
+        """
 
         self.status = "failed"
-        self.last_attempted_at = now
         self.error_message = error_message
 
     def to_dict(self) -> dict:
-        """Return the status as a serializable dictionary."""
+        """
+        Return the status as a serializable dictionary.
+        """
 
         return {
             "source_id": self.source_id,

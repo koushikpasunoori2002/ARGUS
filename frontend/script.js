@@ -242,6 +242,9 @@ function formatSyncStatus(status) {
         case "pending":
             return "Pending";
 
+        case "never_synced":
+            return "Pending";
+
         default:
             return status;
     }
@@ -966,6 +969,11 @@ async function saveServer() {
         saveServerButton.disabled =
             false;
 
+        /*
+         * editingSourceId is reset by closeServerForm()
+         * after a successful save, so determine the label
+         * from the operation that was originally performed.
+         */
         saveServerButton.textContent =
             isEditing
                 ? "Save Changes"
@@ -1127,9 +1135,15 @@ function renderSyncStatus(
                 const statusData =
                     server.status || {};
 
+                const rawStatus =
+                    (
+                        statusData.status ||
+                        "pending"
+                    ).toLowerCase();
+
                 const status =
                     formatSyncStatus(
-                        statusData.status
+                        rawStatus
                     );
 
                 const nextSync =
@@ -1139,7 +1153,21 @@ function renderSyncStatus(
 
                 let nextSyncText;
 
-                if (!server.enabled) {
+                /*
+                 * RUNNING HAS PRIORITY.
+                 *
+                 * When rsync is actively executing, do not
+                 * display "Due" or a countdown. The server is
+                 * already performing its synchronization.
+                 */
+                if (
+                    rawStatus === "running"
+                ) {
+
+                    nextSyncText =
+                        "Current Sync: In progress";
+
+                } else if (!server.enabled) {
 
                     nextSyncText =
                         "Synchronization disabled.";

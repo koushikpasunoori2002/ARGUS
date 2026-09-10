@@ -34,7 +34,6 @@ class SynchronizationService:
         self._statuses: dict[str, SyncStatus] = {}
 
         # The next scheduled time for each server.
-        # This keeps every server on its own independent schedule.
         self._next_sync_times: dict[str, float] = {}
 
         # Servers currently executing an rsync operation.
@@ -58,9 +57,9 @@ class SynchronizationService:
         """
         Synchronize one configured source and update its status.
 
-        The next scheduled execution time is calculated from the
-        time at which this scheduling cycle started, rather than
-        from the completion time of the rsync process.
+        The source status is changed to running before the rsync
+        operation begins and then updated to success or failed
+        when the operation finishes.
         """
 
         if not isinstance(source, SyncSource):
@@ -73,6 +72,12 @@ class SynchronizationService:
             SyncStatus(source.source_id),
         )
 
+        # ------------------------------------------------------
+        # Mark synchronization as running
+        # ------------------------------------------------------
+
+        status.mark_running()
+
         logger.info(
             "Synchronization starting: %s "
             "(interval=%ss)",
@@ -80,7 +85,35 @@ class SynchronizationService:
             source.sync_interval,
         )
 
-        result = self.manager.sync_source(source)
+        try:
+
+            result = self.manager.sync_source(
+                source
+            )
+
+        except Exception as exc:
+
+            error_message = str(exc)
+
+            status.mark_failure(
+                error_message
+            )
+
+            logger.exception(
+                "Synchronization raised an exception: %s",
+                source.source_id,
+            )
+
+            return RsyncResult(
+                success=False,
+                return_code=-4,
+                stdout="",
+                stderr=error_message,
+            )
+
+        # ------------------------------------------------------
+        # Record result
+        # ------------------------------------------------------
 
         if result.success:
 
@@ -95,12 +128,10 @@ class SynchronizationService:
 
         else:
 
-            error_message = result.stderr
-
-            if not error_message:
-                error_message = (
-                    "Synchronization failed."
-                )
+            error_message = (
+                result.stderr
+                or "Synchronization failed."
+            )
 
             status.mark_failure(
                 error_message
@@ -215,7 +246,7 @@ class SynchronizationService:
 
             return True
 
-        except Exception as exc:
+        except Exception:
 
             with self._state_lock:
 
@@ -223,10 +254,10 @@ class SynchronizationService:
                     source.source_id
                 )
 
-                logger.exception(
-                    "Unable to submit synchronization job: %s",
-                    source.source_id,
-                )
+            logger.exception(
+                "Unable to submit synchronization job: %s",
+                source.source_id,
+            )
 
             return False
 
@@ -246,23 +277,45 @@ class SynchronizationService:
             SyncStatus(source_id),
         )
 
+        status.mark_running()
+
         logger.info(
             "Local synchronization starting: %s -> %s",
             source_path,
             destination_path,
         )
 
-        result = self.manager.executor.sync(
-            source=source_path,
-            destination=destination_path,
-        )
+        try:
+
+            result = self.manager.executor.sync(
+                source=source_path,
+                destination=destination_path,
+            )
+
+        except Exception as exc:
+
+            status.mark_failure(
+                str(exc)
+            )
+
+            logger.exception(
+                "Local synchronization raised an exception."
+            )
+
+            return RsyncResult(
+                success=False,
+                return_code=-4,
+                stdout="",
+                stderr=str(exc),
+            )
 
         if result.success:
 
             status.mark_success()
 
             logger.info(
-                "Local synchronization succeeded: %s -> %s",
+                "Local synchronization succeeded: "
+                "%s -> %s",
                 source_path,
                 destination_path,
             )
@@ -310,8 +363,6 @@ class SynchronizationService:
                 source.source_id
             )
 
-        # A source with no schedule has never been
-        # scheduled and is therefore immediately due.
         if next_sync is None:
             return True
 
