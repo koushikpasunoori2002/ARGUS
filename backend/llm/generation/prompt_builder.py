@@ -2,11 +2,12 @@
 prompt_builder.py
 
 Builds structured security-analysis prompts from
-Phase 15 RAG context.
+RAG context using configurable prompts.
 """
 
 from backend.rag.context import RAGContext
 from backend.rag.context import ContextFormatter
+from backend.config.prompts_config import PromptsConfig
 
 
 class PromptBuilder:
@@ -17,11 +18,18 @@ class PromptBuilder:
     def __init__(
         self,
         formatter=None,
+        prompts_config=None,
     ):
         self.formatter = (
             formatter
             if formatter is not None
             else ContextFormatter()
+        )
+
+        self.prompts_config = (
+            prompts_config
+            if prompts_config is not None
+            else PromptsConfig()
         )
 
     # ----------------------------------------------------------
@@ -45,23 +53,14 @@ class PromptBuilder:
             self.formatter.format(context)
         )
 
+        configured_template = (
+            self.prompts_config.get_template(
+                "security_analysis"
+            )
+        )
+
         prompt = f"""
-You are a cybersecurity log analysis assistant.
-
-Your task is to analyse security logs using the
-retrieved evidence and security knowledge provided below.
-
-IMPORTANT RULES:
-
-1. Base your analysis only on the retrieved evidence.
-2. Do not invent log events, users, IP addresses,
-   timestamps, or attack details.
-3. Clearly distinguish observed evidence from
-   security interpretation.
-4. If the evidence is insufficient, explicitly say so.
-5. Identify potential security threats when supported
-   by the evidence.
-6. Provide a concise and technically useful response.
+{configured_template}
 
 Analyse the following security query:
 
@@ -70,29 +69,6 @@ Analyse the following security query:
 Retrieved evidence:
 
 {retrieved_context}
-
-Provide your analysis using the following structure:
-
-THREAT ASSESSMENT
-State whether the evidence indicates a potential
-security threat.
-
-EVIDENCE
-List the important observations from the retrieved logs.
-
-SECURITY INTERPRETATION
-Explain what the observed evidence may indicate.
-
-SEVERITY
-Provide an estimated severity:
-LOW, MEDIUM, HIGH, or CRITICAL.
-
-RECOMMENDED ACTIONS
-Provide practical actions that could help investigate
-or mitigate the potential threat.
-
-If the evidence does not support a conclusion,
-clearly state the limitation.
 """.strip()
 
         return prompt
@@ -120,7 +96,14 @@ clearly state the limitation.
             self.formatter.format(context)
         )
 
+        configured_template = (
+            self.prompts_config.get_template(
+                "security_analysis"
+            )
+        )
+
         return (
+            f"{configured_template}\n\n"
             "Analyse the following security query "
             "using only the retrieved evidence.\n\n"
             f"QUERY:\n{context.query}\n\n"
@@ -145,12 +128,16 @@ clearly state the limitation.
             "formatter": (
                 self.formatter.__class__.__name__
             ),
+            "prompt_config": (
+                self.prompts_config.info()
+            ),
         }
 
     def __repr__(self):
-
         return (
             "PromptBuilder("
             f"formatter="
-            f"'{self.formatter.__class__.__name__}')"
+            f"'{self.formatter.__class__.__name__}', "
+            f"prompts_config="
+            f"'{self.prompts_config.__class__.__name__}')"
         )
