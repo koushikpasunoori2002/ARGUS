@@ -5,9 +5,9 @@ Builds structured security-analysis prompts from
 RAG context using configurable prompts.
 """
 
-from backend.rag.context import RAGContext
-from backend.rag.context import ContextFormatter
 from backend.config.prompts_config import PromptsConfig
+from backend.rag.context import ContextFormatter
+from backend.rag.context import RAGContext
 
 
 class PromptBuilder:
@@ -74,12 +74,12 @@ Retrieved evidence:
         return prompt
 
     # ----------------------------------------------------------
-    # Short Prompt
+    # Build Short Analysis Prompt
     # ----------------------------------------------------------
 
     def build_analysis_prompt(self, context):
         """
-        Build a concise analysis prompt.
+        Build a concise security-analysis prompt.
 
         This is useful when context length needs to be reduced.
         """
@@ -112,6 +112,48 @@ Retrieved evidence:
             "evidence, severity, and recommended actions. "
             "Do not invent information."
         )
+
+    # ----------------------------------------------------------
+    # Build Evidence Summary Prompt
+    # ----------------------------------------------------------
+
+    def build_evidence_summary_prompt(
+        self,
+        context,
+    ):
+        """
+        Build a prompt for summarising retrieved evidence.
+        """
+
+        if not isinstance(
+            context,
+            RAGContext,
+        ):
+            raise TypeError(
+                "context must be a RAGContext."
+            )
+
+        retrieved_context = (
+            self.formatter.format(context)
+        )
+
+        configured_template = (
+            self.prompts_config.get_template(
+                "evidence_summary"
+            )
+        )
+
+        return f"""
+{configured_template}
+
+USER QUERY:
+
+{context.query}
+
+RETRIEVED EVIDENCE:
+
+{retrieved_context}
+""".strip()
 
     # ----------------------------------------------------------
     # Information
