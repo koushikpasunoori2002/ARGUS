@@ -63,10 +63,17 @@ class RsyncExecutor:
     ) -> str:
         """
         Convert a Windows or project-relative path to
-        a WSL-compatible path.
+        a WSL-compatible path while preserving a trailing slash.
         """
 
         path_string = str(path)
+
+        # Preserve whether the caller explicitly supplied a
+        # trailing slash. Rsync uses this to distinguish between
+        # copying a directory and copying its contents.
+        has_trailing_slash = path_string.endswith(
+            ("/", "\\")
+        )
 
         # Already a Linux/WSL absolute path.
         if path_string.startswith("/"):
@@ -77,7 +84,9 @@ class RsyncExecutor:
             len(path_string) >= 2
             and path_string[1] == ":"
         ):
-            windows_path = Path(path_string).resolve()
+            windows_path = Path(
+                path_string
+            ).resolve()
 
         else:
             # Resolve project-relative paths against the
@@ -96,18 +105,23 @@ class RsyncExecutor:
             and windows_string[1] == ":"
         ):
             drive = windows_string[0].lower()
-
             remainder = windows_string[2:]
 
             if not remainder.startswith("/"):
                 remainder = "/" + remainder
 
-            return (
+            wsl_path = (
                 f"/mnt/{drive}"
                 f"{remainder}"
             )
 
-        return windows_string
+        else:
+            wsl_path = windows_string
+
+        if has_trailing_slash:
+            wsl_path += "/"
+
+        return wsl_path
 
     def sync(
         self,
