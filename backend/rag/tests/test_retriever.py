@@ -78,26 +78,31 @@ def main():
             "log_type": "auth",
             "severity": "HIGH",
             "source": "auth.log",
+            "source_id": "server_a",
         },
         {
             "log_type": "auth",
             "severity": "HIGH",
             "source": "auth.log",
+            "source_id": "server_a",
         },
         {
             "log_type": "auth",
             "severity": "INFO",
             "source": "auth.log",
+            "source_id": "server_a",
         },
         {
             "log_type": "syslog",
             "severity": "INFO",
             "source": "syslog",
+            "source_id": "server_b",
         },
         {
             "log_type": "apache",
             "severity": "INFO",
             "source": "apache.log",
+            "source_id": "server_b",
         },
     ]
 
@@ -166,6 +171,37 @@ def main():
         )
 
     print("\nRetriever Search Test: PASS")
+
+    # --------------------------------------------------------------
+    # Source-aware retrieval
+    # --------------------------------------------------------------
+
+    filtered_results = retriever.retrieve(
+        query=query,
+        top_k=5,
+        source_id="server_a",
+    )
+
+    filtered_metadata = (
+        filtered_results.get("metadatas", [[]])[0]
+    )
+
+    if not filtered_metadata:
+        raise AssertionError(
+            "Source-filtered retrieval returned no metadata."
+        )
+
+    if any(
+        metadata.get("source_id") != "server_a"
+        for metadata in filtered_metadata
+    ):
+        raise AssertionError(
+            "Source filtering returned records from another source."
+        )
+
+    print(
+        "\nSource-aware Retrieval Test: PASS"
+    )
 
     # --------------------------------------------------------------
     # Retrieved documents

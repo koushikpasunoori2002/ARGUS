@@ -24,7 +24,11 @@ class ContextBuilder:
         self.top_k_logs = top_k_logs
         self.top_k_knowledge = top_k_knowledge
 
-    def build(self, query):
+    def build(
+        self,
+        query,
+        source_id=None,
+        ):
         if not isinstance(query, str):
             raise TypeError("query must be a string.")
 
@@ -41,6 +45,7 @@ class ContextBuilder:
             semantic_results = self.log_retriever.retrieve(
                 query=query,
                 top_k=self.top_k_logs,
+                source_id=source_id,
             )
 
             self._add_results(

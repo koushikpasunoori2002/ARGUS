@@ -31,6 +31,26 @@ def test_valid_analyze_request():
     print("Valid Analyze Request: PASS")
 
 
+def test_analyze_request_with_source_id():
+    response = client.post(
+        "/analyze",
+        json={
+            "query": "failed SSH authentication",
+            "source_id": "server_a",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "query" in data
+    assert "answer" in data
+    assert data["query"] == "failed SSH authentication"
+
+    print("Source-Aware Analyze Request: PASS")
+
+
 def test_empty_query():
     response = client.post(
         "/analyze",
@@ -93,15 +113,16 @@ def test_response_structure():
 if __name__ == "__main__":
 
     print("=" * 60)
-    print("PHASE 18 ANALYZE ENDPOINT TEST")
+    print("ANALYZE ENDPOINT TEST")
     print("=" * 60)
 
     test_valid_analyze_request()
+    test_analyze_request_with_source_id()
     test_empty_query()
     test_missing_query()
     test_invalid_method()
     test_response_structure()
 
     print("=" * 60)
-    print("PHASE 18 ANALYZE ENDPOINT TEST PASSED")
+    print("ANALYZE ENDPOINT TEST PASSED")
     print("=" * 60)

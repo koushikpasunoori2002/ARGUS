@@ -14,6 +14,11 @@ class AnalyzeRequest(BaseModel):
         description="Security-related query to analyse.",
     )
 
+    source_id: str | None = Field(
+        default=None,
+        description="Optional server source ID used to restrict log retrieval.",
+    )
+
 
 class AnalyzeResponse(BaseModel):
     """Response schema returned by the analysis endpoint."""

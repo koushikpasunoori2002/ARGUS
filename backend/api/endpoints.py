@@ -67,7 +67,8 @@ def analyze(request: AnalyzeRequest):
     )
 
     context = context_builder.build(
-        query
+        query,
+        source_id=request.source_id,
     )
 
     # ----------------------------------------------------------

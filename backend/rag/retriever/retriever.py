@@ -4,6 +4,8 @@ retriever.py
 Retrieves relevant log chunks from the vector database.
 """
 
+from certifi import where
+
 from backend.llm.embeddings import EmbeddingManager
 from backend.database.chroma import ChromaDatabase
 
@@ -58,6 +60,7 @@ class Retriever:
         self,
         query,
         top_k=None,
+        source_id=None,
     ):
         """
         Retrieve documents relevant to a query.
@@ -100,9 +103,22 @@ class Retriever:
             )
         )
 
+        where = None
+
+        if source_id is not None:
+            if not str(source_id).strip():
+                raise ValueError(
+                    "source_id cannot be empty."
+                )
+
+            where = {
+                "source_id": str(source_id).strip()
+            }
+
         return self.database.search(
             query_embedding=query_embedding,
             n_results=number_of_results,
+        where=where,
         )
 
     def retrieve_documents(

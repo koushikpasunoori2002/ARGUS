@@ -96,6 +96,7 @@ class ChromaDatabase(BaseVectorDatabase):
         self,
         query_embedding,
         n_results=5,
+        where=None,
     ):
         """
         Search for vectors similar to a query embedding.
@@ -110,6 +111,7 @@ class ChromaDatabase(BaseVectorDatabase):
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=n_results,
+            where=where,
         )
 
         return results
