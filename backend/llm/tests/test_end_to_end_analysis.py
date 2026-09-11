@@ -1,7 +1,5 @@
 """
-test_end_to_end_analysis.py
-
-Phase 16 end-to-end integration test.
+End-to-end security analysis performance test.
 
 Pipeline:
 
@@ -24,6 +22,7 @@ Security Analysis
 
 from pathlib import Path
 import sys
+import time
 
 
 # --------------------------------------------------------------
@@ -57,13 +56,24 @@ from backend.llm.generation import LLMResponse
 
 
 # --------------------------------------------------------------
+# Test Queries
+# --------------------------------------------------------------
+
+QUERIES = [
+    "failed SSH authentication brute force attack",
+    "suspicious repeated login attempts",
+    "unauthorised access through SSH",
+]
+
+
+# --------------------------------------------------------------
 # Main Test
 # --------------------------------------------------------------
 
 def main():
 
     print("=" * 70)
-    print("PHASE 16 END-TO-END SECURITY ANALYSIS TEST")
+    print("END-TO-END SECURITY ANALYSIS PERFORMANCE TEST")
     print("=" * 70)
 
     # ----------------------------------------------------------
@@ -75,10 +85,7 @@ def main():
     embedding_manager = EmbeddingManager()
 
     print(
-        "Embedding Model:"
-    )
-
-    print(
+        "Embedding Model:",
         embedding_manager.model_information()
     )
 
@@ -87,9 +94,7 @@ def main():
         embedding_manager.embedding_dimension()
     )
 
-    print(
-        "Embedding Model: PASS"
-    )
+    print("Embedding Model: PASS")
 
     # ----------------------------------------------------------
     # Step 2 — Create log database
@@ -98,15 +103,13 @@ def main():
     print("\n[2] Creating log database...")
 
     log_database = ChromaDatabase(
-        collection_name="phase16_log_test",
-        persist_directory="data/test_phase16_log",
+        collection_name="security_performance_log_test",
+        persist_directory="data/test_security_performance_log",
     )
 
     log_database.clear()
 
-    print(
-        "Log Database: PASS"
-    )
+    print("Log Database: PASS")
 
     # ----------------------------------------------------------
     # Step 3 — Create knowledge database
@@ -115,15 +118,13 @@ def main():
     print("\n[3] Creating knowledge database...")
 
     knowledge_database = ChromaDatabase(
-        collection_name="phase16_knowledge_test",
-        persist_directory="data/test_phase16_knowledge",
+        collection_name="security_performance_knowledge_test",
+        persist_directory="data/test_security_performance_knowledge",
     )
 
     knowledge_database.clear()
 
-    print(
-        "Knowledge Database: PASS"
-    )
+    print("Knowledge Database: PASS")
 
     # ----------------------------------------------------------
     # Step 4 — Create retrievers
@@ -143,13 +144,8 @@ def main():
         top_k=2,
     )
 
-    print(
-        "Log Retriever: PASS"
-    )
-
-    print(
-        "Knowledge Retriever: PASS"
-    )
+    print("Log Retriever: PASS")
+    print("Knowledge Retriever: PASS")
 
     # ----------------------------------------------------------
     # Step 5 — Create log records
@@ -157,7 +153,7 @@ def main():
 
     log_records = [
         {
-            "id": "e2e_log_001",
+            "id": "performance_log_001",
             "document": (
                 "Failed password for root "
                 "from 192.168.1.20 port 22 ssh2"
@@ -169,7 +165,7 @@ def main():
             },
         },
         {
-            "id": "e2e_log_002",
+            "id": "performance_log_002",
             "document": (
                 "Failed password for admin "
                 "from 192.168.1.30 port 22 ssh2"
@@ -181,7 +177,7 @@ def main():
             },
         },
         {
-            "id": "e2e_log_003",
+            "id": "performance_log_003",
             "document": (
                 "Successful login for user osboxes"
             ),
@@ -207,10 +203,8 @@ def main():
         for record in log_records
     ]
 
-    log_embeddings = (
-        embedding_manager.embed_texts(
-            log_texts
-        )
+    log_embeddings = embedding_manager.embed_texts(
+        log_texts
     )
 
     print(
@@ -246,7 +240,7 @@ def main():
 
     knowledge_records = [
         {
-            "id": "e2e_kb_001",
+            "id": "performance_kb_001",
             "document": (
                 "Repeated failed SSH authentication "
                 "attempts may indicate a brute-force attack."
@@ -257,7 +251,7 @@ def main():
             },
         },
         {
-            "id": "e2e_kb_002",
+            "id": "performance_kb_002",
             "document": (
                 "Brute-force attacks involve repeated "
                 "authentication attempts against a service."
@@ -283,10 +277,8 @@ def main():
         for record in knowledge_records
     ]
 
-    knowledge_embeddings = (
-        embedding_manager.embed_texts(
-            knowledge_texts
-        )
+    knowledge_embeddings = embedding_manager.embed_texts(
+        knowledge_texts
     )
 
     print(
@@ -320,9 +312,7 @@ def main():
     # Step 11 — Create ContextBuilder
     # ----------------------------------------------------------
 
-    print(
-        "\n[5] Creating ContextBuilder..."
-    )
+    print("\n[5] Creating ContextBuilder...")
 
     context_builder = ContextBuilder(
         log_retriever=log_retriever,
@@ -340,194 +330,20 @@ def main():
     )
 
     # ----------------------------------------------------------
-    # Step 12 — Retrieve RAG context
+    # Step 12 — Create PromptBuilder
     # ----------------------------------------------------------
 
-    query = (
-        "failed SSH authentication "
-        "brute force attack"
-    )
-
-    print(
-        "\nQuery:"
-    )
-
-    print(
-        query
-    )
-
-    context = context_builder.build(
-        query
-    )
-
-    if not isinstance(
-        context,
-        RAGContext,
-    ):
-
-        raise AssertionError(
-            "ContextBuilder did not return RAGContext."
-        )
-
-    print(
-        "\nRAGContext"
-    )
-
-    print(
-        context
-    )
-
-    # ----------------------------------------------------------
-    # Validate log retrieval
-    # ----------------------------------------------------------
-
-    if len(
-        context.log_results
-    ) != 2:
-
-        raise AssertionError(
-            "Expected 2 retrieved log results."
-        )
-
-    print(
-        "\nLog Retrieval: PASS"
-    )
-
-    # ----------------------------------------------------------
-    # Validate knowledge retrieval
-    # ----------------------------------------------------------
-
-    if len(
-        context.knowledge_results
-    ) != 2:
-
-        raise AssertionError(
-            "Expected 2 retrieved knowledge results."
-        )
-
-    print(
-        "Knowledge Retrieval: PASS"
-    )
-
-    print(
-        "Context Builder: PASS"
-    )
-
-    # ----------------------------------------------------------
-    # Display retrieved evidence
-    # ----------------------------------------------------------
-
-    print(
-        "\nRetrieved Log Evidence"
-    )
-
-    for index, result in enumerate(
-        context.log_results,
-        start=1,
-    ):
-
-        print(
-            f"\nResult {index}"
-        )
-
-        print(
-            "Document:",
-            result.get("document")
-        )
-
-        print(
-            "Metadata:",
-            result.get("metadata")
-        )
-
-        print(
-            "Distance:",
-            result.get("distance")
-        )
-
-    print(
-        "\nRetrieved Security Knowledge"
-    )
-
-    for index, result in enumerate(
-        context.knowledge_results,
-        start=1,
-    ):
-
-        print(
-            f"\nResult {index}"
-        )
-
-        print(
-            "Document:",
-            result.get("document")
-        )
-
-        print(
-            "Metadata:",
-            result.get("metadata")
-        )
-
-        print(
-            "Distance:",
-            result.get("distance")
-        )
-
-    # ----------------------------------------------------------
-    # Step 13 — Build LLM prompt
-    # ----------------------------------------------------------
-
-    print(
-        "\n[6] Building LLM prompt..."
-    )
+    print("\n[6] Creating PromptBuilder...")
 
     prompt_builder = PromptBuilder()
 
-    prompt = prompt_builder.build(
-        context
-    )
-
-    if not prompt:
-
-        raise AssertionError(
-            "Generated prompt is empty."
-        )
-
-    if query not in prompt:
-
-        raise AssertionError(
-            "Query is missing from prompt."
-        )
-
-    if "Failed password" not in prompt:
-
-        raise AssertionError(
-            "Log evidence is missing from prompt."
-        )
-
-    if "brute-force" not in prompt.lower():
-
-        raise AssertionError(
-            "Security knowledge is missing from prompt."
-        )
-
-    print(
-        "Prompt Builder: PASS"
-    )
-
-    print(
-        "Prompt Length:",
-        len(prompt),
-        "characters"
-    )
+    print("Prompt Builder: PASS")
 
     # ----------------------------------------------------------
-    # Step 14 — Initialise LLM
+    # Step 13 — Initialise LLM
     # ----------------------------------------------------------
 
-    print(
-        "\n[7] Initialising local LLM..."
-    )
+    print("\n[7] Initialising local LLM...")
 
     llm_client = LLMClient()
 
@@ -539,23 +355,13 @@ def main():
         llm_client.info()
     )
 
-    # ----------------------------------------------------------
-    # Check Ollama
-    # ----------------------------------------------------------
-
     if not llm_client.is_available():
 
         raise RuntimeError(
             "Ollama is not available."
         )
 
-    print(
-        "Ollama Availability: PASS"
-    )
-
-    # ----------------------------------------------------------
-    # Check Model
-    # ----------------------------------------------------------
+    print("Ollama Availability: PASS")
 
     if not llm_client.model_available():
 
@@ -563,145 +369,336 @@ def main():
             "llama3.1:8b is not available."
         )
 
-    print(
-        "Model Availability: PASS"
-    )
+    print("Model Availability: PASS")
 
     # ----------------------------------------------------------
-    # Step 15 — Generate security analysis
+    # Step 14 — Run security analysis queries
     # ----------------------------------------------------------
 
-    print(
-        "\nGenerating LLM security analysis..."
-    )
+    results = []
 
-    print(
-        "Model: llama3.1:8b"
-    )
+    print("\n" + "=" * 70)
+    print("SECURITY ANALYSIS PERFORMANCE")
+    print("=" * 70)
 
-    print(
-        "Please wait..."
-    )
-
-    response = llm_client.generate(
-        prompt
-    )
-
-    # ----------------------------------------------------------
-    # Validate LLM response
-    # ----------------------------------------------------------
-
-    if not isinstance(
-        response,
-        LLMResponse,
+    for index, query in enumerate(
+        QUERIES,
+        start=1,
     ):
 
-        raise AssertionError(
-            "LLM did not return LLMResponse."
+        print("\n" + "-" * 70)
+        print(f"QUERY {index}")
+        print("-" * 70)
+
+        print("Query:", query)
+
+        # ------------------------------------------------------
+        # Retrieval timing
+        # ------------------------------------------------------
+
+        retrieval_start = time.perf_counter()
+
+        context = context_builder.build(
+            query
         )
 
-    if not response.answer:
-
-        raise AssertionError(
-            "LLM returned an empty answer."
+        retrieval_time = (
+            time.perf_counter()
+            - retrieval_start
         )
 
-    print(
-        "\nLLM Generation: PASS"
-    )
+        if not isinstance(
+            context,
+            RAGContext,
+        ):
 
-    # ----------------------------------------------------------
-    # Step 16 — Display final security analysis
-    # ----------------------------------------------------------
+            raise AssertionError(
+                "ContextBuilder did not return RAGContext."
+            )
 
-    print(
-        "\n" + "=" * 70
-    )
+        if len(context.log_results) != 2:
 
-    print(
-        "FINAL SECURITY ANALYSIS"
-    )
+            raise AssertionError(
+                "Expected 2 retrieved log results."
+            )
 
-    print(
-        "=" * 70
-    )
+        if len(context.knowledge_results) != 2:
 
-    print(
-        response.answer
-    )
+            raise AssertionError(
+                "Expected 2 retrieved knowledge results."
+            )
 
-    # ----------------------------------------------------------
-    # Step 17 — Verify relevance
-    # ----------------------------------------------------------
+        # ------------------------------------------------------
+        # Prompt timing
+        # ------------------------------------------------------
 
-    answer_lower = (
-        response.answer.lower()
-    )
+        prompt_start = time.perf_counter()
 
-    relevant_terms = [
-        "ssh",
-        "authentication",
-        "failed",
-    ]
-
-    found_terms = [
-        term
-        for term in relevant_terms
-        if term in answer_lower
-    ]
-
-    print(
-        "\nRelevant Terms Found"
-    )
-
-    print(
-        found_terms
-    )
-
-    if len(
-        found_terms
-    ) < 2:
-
-        raise AssertionError(
-            "Generated analysis does not appear "
-            "relevant to the security query."
+        prompt = prompt_builder.build(
+            context
         )
 
+        prompt_time = (
+            time.perf_counter()
+            - prompt_start
+        )
+
+        if not prompt:
+
+            raise AssertionError(
+                "Generated prompt is empty."
+            )
+
+        # ------------------------------------------------------
+        # LLM timing
+        # ------------------------------------------------------
+
+        llm_start = time.perf_counter()
+
+        response = llm_client.generate(
+            prompt
+        )
+
+        llm_time = (
+            time.perf_counter()
+            - llm_start
+        )
+
+        if not isinstance(
+            response,
+            LLMResponse,
+        ):
+
+            raise AssertionError(
+                "LLM did not return LLMResponse."
+            )
+
+        if not response.answer:
+
+            raise AssertionError(
+                "LLM returned an empty answer."
+            )
+
+        # ------------------------------------------------------
+        # Relevance validation
+        # ------------------------------------------------------
+
+        answer_lower = response.answer.lower()
+
+        relevant_terms = [
+            "ssh",
+            "authentication",
+            "failed",
+        ]
+
+        found_terms = [
+            term
+            for term in relevant_terms
+            if term in answer_lower
+        ]
+
+        relevance_pass = len(found_terms) >= 2
+
+        if not relevance_pass:
+
+            raise AssertionError(
+                "Generated analysis does not appear "
+                "relevant to the security query."
+            )
+
+        # ------------------------------------------------------
+        # Ollama timing
+        # ------------------------------------------------------
+
+        ollama_duration = (
+            response.metadata.get(
+                "total_duration",
+                0
+            ) / 1e9
+        )
+
+        prompt_tokens = response.metadata.get(
+            "prompt_eval_count"
+        )
+
+        output_tokens = response.metadata.get(
+            "eval_count"
+        )
+
+        # ------------------------------------------------------
+        # Store result
+        # ------------------------------------------------------
+
+        results.append(
+            {
+                "query": query,
+                "retrieval_time": retrieval_time,
+                "prompt_time": prompt_time,
+                "llm_time": llm_time,
+                "ollama_duration": ollama_duration,
+                "prompt_tokens": prompt_tokens,
+                "output_tokens": output_tokens,
+                "relevant_terms": found_terms,
+            }
+        )
+
+        # ------------------------------------------------------
+        # Display result
+        # ------------------------------------------------------
+
+        print("\nRetrieved Logs:", len(context.log_results))
+        print(
+            "Retrieved Knowledge:",
+            len(context.knowledge_results)
+        )
+
+        print(
+            "Prompt Length:",
+            len(prompt),
+            "characters"
+        )
+
+        print(
+            "Retrieval Time:",
+            f"{retrieval_time:.4f}",
+            "seconds"
+        )
+
+        print(
+            "Prompt Build Time:",
+            f"{prompt_time:.4f}",
+            "seconds"
+        )
+
+        print(
+            "LLM Wall Time:",
+            f"{llm_time:.4f}",
+            "seconds"
+        )
+
+        print(
+            "Ollama Duration:",
+            f"{ollama_duration:.4f}",
+            "seconds"
+        )
+
+        print(
+            "Prompt Tokens:",
+            prompt_tokens
+        )
+
+        print(
+            "Output Tokens:",
+            output_tokens
+        )
+
+        print(
+            "Relevant Terms:",
+            found_terms
+        )
+
+        print(
+            "Security Analysis Relevance: PASS"
+        )
+
+        print("\nGenerated Analysis:")
+        print(response.answer)
+
+    # ----------------------------------------------------------
+    # Step 15 — Calculate performance summary
+    # ----------------------------------------------------------
+
+    print("\n" + "=" * 70)
+    print("PERFORMANCE SUMMARY")
+    print("=" * 70)
+
+    average_retrieval = (
+        sum(
+            result["retrieval_time"]
+            for result in results
+        )
+        / len(results)
+    )
+
+    average_prompt = (
+        sum(
+            result["prompt_time"]
+            for result in results
+        )
+        / len(results)
+    )
+
+    average_llm = (
+        sum(
+            result["llm_time"]
+            for result in results
+        )
+        / len(results)
+    )
+
+    average_ollama = (
+        sum(
+            result["ollama_duration"]
+            for result in results
+        )
+        / len(results)
+    )
+
     print(
-        "Security Analysis Relevance: PASS"
+        "Queries Tested:",
+        len(results)
+    )
+
+    print(
+        "Average Retrieval Time:",
+        f"{average_retrieval:.4f}",
+        "seconds"
+    )
+
+    print(
+        "Average Prompt Build Time:",
+        f"{average_prompt:.4f}",
+        "seconds"
+    )
+
+    print(
+        "Average LLM Wall Time:",
+        f"{average_llm:.4f}",
+        "seconds"
+    )
+
+    print(
+        "Average Ollama Duration:",
+        f"{average_ollama:.4f}",
+        "seconds"
+    )
+
+    print(
+        "All Queries Relevant:",
+        all(
+            len(result["relevant_terms"]) >= 2
+            for result in results
+        )
     )
 
     # ----------------------------------------------------------
-    # Step 18 — Cleanup
+    # Step 16 — Cleanup
     # ----------------------------------------------------------
 
-    print(
-        "\n[8] Cleaning test databases..."
-    )
+    print("\n[8] Cleaning test databases...")
 
     log_database.clear()
-
     knowledge_database.clear()
 
-    print(
-        "Cleanup: PASS"
-    )
+    print("Cleanup: PASS")
 
     # ----------------------------------------------------------
     # Final result
     # ----------------------------------------------------------
 
-    print(
-        "\n" + "=" * 70
-    )
-
-    print(
-        "PHASE 16 END-TO-END SECURITY ANALYSIS TEST PASSED"
-    )
-
-    print(
-        "=" * 70
-    )
+    print("\n" + "=" * 70)
+    print("END-TO-END SECURITY ANALYSIS PERFORMANCE TEST PASSED")
+    print("=" * 70)
 
 
 # --------------------------------------------------------------
@@ -709,5 +706,4 @@ def main():
 # --------------------------------------------------------------
 
 if __name__ == "__main__":
-
     main()

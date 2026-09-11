@@ -1,35 +1,25 @@
 """
 rag_analyzer.py
 
-Connects Phase 15 RAG context with the local LLM.
-
-Supports both:
-    1. Raw LLMResponse analysis
-    2. Structured SecurityAnalysis
+Performs security analysis using retrieved RAG context
+and the configured local LLM.
 """
 
-from backend.rag.context import RAGContext
-
-from backend.llm.analysis import AnalysisParser
-
-from .llm_client import LLMClient
-from .prompt_builder import PromptBuilder
-from .response import LLMResponse
+from backend.llm.generation.llm_client import LLMClient
+from backend.llm.generation.prompt_builder import PromptBuilder
+from backend.llm.generation.response import LLMResponse
 
 
 class RAGAnalyzer:
     """
-    Uses retrieved RAG context to generate a
-    security analysis using the local LLM.
+    Generates security analysis responses from RAG context.
     """
 
     def __init__(
         self,
         llm_client=None,
         prompt_builder=None,
-        analysis_parser=None,
     ):
-
         self.llm_client = (
             llm_client
             if llm_client is not None
@@ -42,119 +32,97 @@ class RAGAnalyzer:
             else PromptBuilder()
         )
 
-        self.analysis_parser = (
-            analysis_parser
-            if analysis_parser is not None
-            else AnalysisParser()
-        )
-
-    # ----------------------------------------------------------
-    # Analyse RAG Context
-    # ----------------------------------------------------------
-
     def analyze(self, context):
         """
-        Generate an LLM security analysis from RAGContext.
-
-        Returns:
-            LLMResponse
+        Generate an analysis response from the supplied RAG context.
         """
 
-        if not isinstance(
-            context,
-            RAGContext,
-        ):
-            raise TypeError(
-                "context must be a RAGContext."
+        if context is None:
+            raise ValueError("context cannot be None.")
+
+        prompt = self.prompt_builder.build(context)
+
+        result = self.llm_client.generate(prompt)
+
+        if isinstance(result, LLMResponse):
+            response = result
+        else:
+            response = LLMResponse(
+                query=context.query,
+                answer=str(result),
+                model=getattr(
+                    self.llm_client,
+                    "model",
+                    "unknown",
+                ),
             )
 
-        prompt = self.prompt_builder.build(
-            context
-        )
-
-        response = self.llm_client.generate(
-            prompt
-        )
-
-        if not isinstance(
-            response,
-            LLMResponse,
-        ):
-            raise TypeError(
-                "LLM client must return an LLMResponse."
-            )
-
-        # Preserve the original user query.
         response.query = context.query
 
-        response.metadata.update({
-            "rag": True,
-            "log_results": len(
-                context.log_results
-            ),
-            "knowledge_results": len(
-                context.knowledge_results
-            ),
-        })
+        response.metadata.update(
+            {
+                "rag": True,
+                "log_results": context.log_count(),
+                "related_log_results": (
+                    context.related_log_count()
+                ),
+                "knowledge_results": (
+                    context.knowledge_count()
+                ),
+            }
+        )
 
         return response
 
-    # ----------------------------------------------------------
-    # Structured Analysis
-    # ----------------------------------------------------------
-
     def analyze_structured(self, context):
         """
-        Generate an LLM security analysis and convert
-        it into a structured SecurityAnalysis object.
+        Generate and parse a structured security analysis.
         """
 
-        response = self.analyze(
-            context
+        response = self.analyze(context)
+
+        from backend.llm.analysis.analysis_parser import (
+            AnalysisParser,
         )
 
-        analysis = self.analysis_parser.parse(
-            response
+        parser = AnalysisParser()
+
+        analysis = parser.parse(
+            response.answer
         )
 
-        # Preserve useful RAG information.
-        analysis.metadata.update({
-            "query": context.query,
-            "model": response.model,
-            "rag": True,
-            "log_results": len(
-                context.log_results
-            ),
-            "knowledge_results": len(
-                context.knowledge_results
-            ),
-        })
+        analysis.metadata.update(
+            {
+                "query": context.query,
+                "log_results": context.log_count(),
+                "related_log_results": (
+                    context.related_log_count()
+                ),
+                "knowledge_results": (
+                    context.knowledge_count()
+                ),
+                "model": response.model,
+            }
+        )
 
         return analysis
 
-    # ----------------------------------------------------------
-    # Information
-    # ----------------------------------------------------------
-
     def info(self):
         """
-        Return analyzer information.
+        Return analyzer configuration information.
         """
 
         return {
-            "component": "RAGAnalyzer",
-            "llm_client": self.llm_client.info(),
-            "prompt_builder": self.prompt_builder.info(),
-            "analysis_parser": self.analysis_parser.info(),
+            "analyzer": self.__class__.__name__,
+            "llm_client": self.llm_client.__class__.__name__,
+            "prompt_builder": (
+                self.prompt_builder.__class__.__name__
+            ),
         }
 
-    # ----------------------------------------------------------
-    # Representation
-    # ----------------------------------------------------------
-
     def __repr__(self):
-
         return (
-            "RAGAnalyzer("
-            f"model='{self.llm_client.model}')"
+            f"RAGAnalyzer("
+            f"llm_client={self.llm_client.__class__.__name__}, "
+            f"prompt_builder={self.prompt_builder.__class__.__name__})"
         )

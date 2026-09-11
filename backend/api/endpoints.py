@@ -4,7 +4,7 @@ endpoints.py
 Security analysis API endpoints for LogLlamalyzer.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from backend.api.schemas import (
     AnalyzeRequest,
@@ -23,77 +23,56 @@ from backend.llm.generation import RAGAnalyzer
 router = APIRouter()
 
 
-# ----------------------------------------------------------
-# Analyze Endpoint
-# ----------------------------------------------------------
-
-@router.post(
-    "/analyze",
-    response_model=AnalyzeResponse,
-)
+@router.post("/analyze", response_model=AnalyzeResponse)
 def analyze(request: AnalyzeRequest):
-    """
-    Analyse a security query using the complete
-    RAG + LLM pipeline.
-    """
-
-    # ------------------------------------------------------
-    # Validate query
-    # ------------------------------------------------------
 
     query = request.query.strip()
 
     if not query:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=400,
-            detail="Query cannot be empty.",
+            detail="Query cannot be empty."
         )
 
-    # ------------------------------------------------------
-    # Create log retriever
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
+    # Log retrieval
+    # ----------------------------------------------------------
 
     log_retriever = Retriever(
         top_k=3
     )
 
-    # ------------------------------------------------------
-    # Create knowledge database
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
+    # Security knowledge retrieval
+    # ----------------------------------------------------------
 
     knowledge_database = ChromaDatabase(
-        collection_name="knowledge_embeddings"
+        collection_name="security_knowledge"
     )
-
-    # ------------------------------------------------------
-    # Create knowledge retriever
-    # ------------------------------------------------------
 
     knowledge_retriever = KnowledgeRetriever(
         database=knowledge_database,
-        top_k=3,
+        top_k=3
     )
 
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
     # Build RAG context
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
 
     context_builder = ContextBuilder(
         log_retriever=log_retriever,
         knowledge_retriever=knowledge_retriever,
         top_k_logs=3,
-        top_k_knowledge=3,
+        top_k_knowledge=3
     )
 
     context = context_builder.build(
         query
     )
 
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
     # Generate security analysis
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
 
     analyzer = RAGAnalyzer()
 
@@ -101,11 +80,31 @@ def analyze(request: AnalyzeRequest):
         context
     )
 
-    # ------------------------------------------------------
-    # Return API response
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
+    # Response metadata
+    # ----------------------------------------------------------
+
+    metadata = {
+        "model": response.model,
+        "log_count": len(
+            context.log_results
+        ),
+        "knowledge_count": len(
+            context.knowledge_results
+        ),
+        "top_k_logs": context_builder.top_k_logs,
+        "top_k_knowledge": context_builder.top_k_knowledge,
+        "rag": True,
+    }
+
+    # ----------------------------------------------------------
+    # API response
+    # ----------------------------------------------------------
 
     return AnalyzeResponse(
         query=query,
         answer=response.answer,
+        evidence=context.log_results,
+        knowledge=context.knowledge_results,
+        metadata=metadata,
     )

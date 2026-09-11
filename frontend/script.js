@@ -109,6 +109,17 @@ const syncStatusList =
 
 
 // ==========================================================
+// Log type management elements
+// ==========================================================
+
+const logTypeList =
+    document.getElementById(
+        "log-type-list"
+    );
+
+
+
+// ==========================================================
 // Current server form mode
 // ==========================================================
 
@@ -1153,6 +1164,8 @@ function renderSyncStatus(
 
                 let nextSyncText;
 
+
+
                 /*
                  * RUNNING HAS PRIORITY.
                  *
@@ -1258,6 +1271,104 @@ function renderSyncStatus(
                                   `
                                 : ""
                         }
+
+                    </div>
+                `;
+            })
+            .join("");
+}
+
+
+
+// ==========================================================
+// Load configured log types
+// ==========================================================
+
+async function loadLogTypes() {
+
+    if (!logTypeList) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/log-types`
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Log type request failed: ${response.status}`
+            );
+        }
+
+        const data =
+            await response.json();
+
+        renderLogTypes(
+            data.log_types
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Unable to load log types:",
+            error
+        );
+
+        logTypeList.innerHTML =
+            "<p>Unable to load configured log types.</p>";
+    }
+}
+
+
+
+// ==========================================================
+// Display configured log types
+// ==========================================================
+
+function renderLogTypes(
+    logTypes
+) {
+
+    if (!logTypeList) {
+        return;
+    }
+
+    if (
+        !logTypes ||
+        logTypes.length === 0
+    ) {
+
+        logTypeList.innerHTML =
+            "<p>No log types configured.</p>";
+
+        return;
+    }
+
+    logTypeList.innerHTML =
+        logTypes
+            .map(logType => {
+
+                return `
+                    <div class="log-type-card">
+
+                        <h3>
+                            ${escapeHtml(
+                                logType.log_type
+                            )}
+                        </h3>
+
+                        <p>
+                            Parser:
+                            <strong>
+                                ${escapeHtml(
+                                    logType.parser
+                                )}
+                            </strong>
+                        </p>
 
                     </div>
                 `;
@@ -1432,6 +1543,8 @@ if (analyzeButton) {
 loadServers();
 
 loadSyncStatus();
+
+loadLogTypes();
 
 
 

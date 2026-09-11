@@ -12,13 +12,17 @@ from typing import Any, Dict, List
 @dataclass
 class RAGContext:
     """
-    Represents combined context retrieved from logs
-    and security knowledge.
+    Structured context containing retrieved evidence and
+    related log records for security analysis.
     """
 
     query: str
 
     log_results: List[Dict[str, Any]] = field(
+        default_factory=list
+    )
+
+    related_log_results: List[Dict[str, Any]] = field(
         default_factory=list
     )
 
@@ -30,61 +34,72 @@ class RAGContext:
         default_factory=dict
     )
 
-    def add_log_result(self, result):
-        """
-        Add a retrieved log result.
-        """
+    def add_log_result(
+        self,
+        result: Dict[str, Any],
+    ) -> None:
+        """Add a semantic log retrieval result."""
 
         self.log_results.append(result)
 
-    def add_knowledge_result(self, result):
-        """
-        Add a retrieved knowledge result.
-        """
+    def add_related_log_result(
+        self,
+        result: Dict[str, Any],
+    ) -> None:
+        """Add a related log retrieval result."""
+
+        self.related_log_results.append(result)
+
+    def add_knowledge_result(
+        self,
+        result: Dict[str, Any],
+    ) -> None:
+        """Add a security knowledge retrieval result."""
 
         self.knowledge_results.append(result)
 
-    def log_count(self):
-        """
-        Return the number of log results.
-        """
+    def log_count(self) -> int:
+        """Return the number of semantic log results."""
 
         return len(self.log_results)
 
-    def knowledge_count(self):
-        """
-        Return the number of knowledge results.
-        """
+    def related_log_count(self) -> int:
+        """Return the number of related log results."""
+
+        return len(self.related_log_results)
+
+    def knowledge_count(self) -> int:
+        """Return the number of security knowledge results."""
 
         return len(self.knowledge_results)
 
-    def to_dict(self):
-        """
-        Convert the context to a dictionary.
-        """
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the context into a dictionary."""
 
         return {
             "query": self.query,
             "log_results": self.log_results,
+            "related_log_results": self.related_log_results,
             "knowledge_results": self.knowledge_results,
             "metadata": self.metadata,
         }
 
-    def __str__(self):
-
+    def __str__(self) -> str:
         return (
-            f"RAGContext\n"
+            "RAGContext\n"
             f"Query              : {self.query}\n"
             f"Log Results        : {self.log_count()}\n"
+            f"Related Log Results: {self.related_log_count()}\n"
             f"Knowledge Results  : {self.knowledge_count()}\n"
             f"Metadata           : {self.metadata}"
         )
 
-    def __repr__(self):
-
+    def __repr__(self) -> str:
         return (
             f"RAGContext("
             f"query='{self.query}', "
             f"logs={self.log_count()}, "
-            f"knowledge={self.knowledge_count()})"
+            f"related_logs={self.related_log_count()}, "
+            f"knowledge={self.knowledge_count()}"
+            f")"
         )

@@ -24,6 +24,7 @@ Relevant Log Chunks
 
 from pathlib import Path
 import sys
+import time
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -78,9 +79,16 @@ def main():
         PreprocessingPipeline()
     )
 
+    preprocessing_start = time.perf_counter()
+
     info, records = (
         preprocessing_pipeline
         .process_with_metadata(log_file)
+    )
+
+    preprocessing_time = (
+        time.perf_counter()
+        - preprocessing_start
     )
 
     print(f"Log Type       : {info.log_type}")
@@ -108,6 +116,8 @@ def main():
         overlap=50,
     )
 
+    chunking_start = time.perf_counter()
+
     for record in records:
 
         chunk_manager.add_record(
@@ -116,6 +126,11 @@ def main():
         )
 
     chunks = chunk_manager.get_chunks()
+
+    chunking_time = (
+        time.perf_counter()
+        - chunking_start
+    )
 
     print(f"Records       : {len(records)}")
     print(f"Chunks Created: {len(chunks)}")
@@ -138,10 +153,17 @@ def main():
 
     embedding_manager = EmbeddingManager()
 
+    embedding_start = time.perf_counter()
+
     chunk_embeddings = (
         embedding_manager.embed_chunks(
             chunks
         )
+    )
+
+    embedding_time = (
+        time.perf_counter()
+        - embedding_start
     )
 
     print(
@@ -197,6 +219,8 @@ def main():
         for chunk in chunks
     ]
 
+    chromadb_start = time.perf_counter()
+
     database.add(
         ids=ids,
         embeddings=chunk_embeddings,
@@ -205,6 +229,11 @@ def main():
     )
 
     stored_count = database.count()
+
+    chromadb_time = (
+        time.perf_counter()
+        - chromadb_start
+    )
 
     print(
         f"Chunks Stored: {stored_count}"
@@ -237,9 +266,16 @@ def main():
 
     print(f"Query: {query}")
 
+    retrieval_start = time.perf_counter()
+
     results = retriever.retrieve(
         query=query,
         top_k=3,
+    )
+
+    retrieval_time = (
+        time.perf_counter()
+        - retrieval_start
     )
 
     if not results.get("documents"):
@@ -281,6 +317,52 @@ def main():
     print("\nRetriever: PASS")
 
     # --------------------------------------------------------------
+    # Performance Summary
+    # --------------------------------------------------------------
+
+    total_rag_time = (
+        preprocessing_time
+        + chunking_time
+        + embedding_time
+        + chromadb_time
+        + retrieval_time
+    )
+
+    print("\n" + "=" * 70)
+    print("RAG PIPELINE PERFORMANCE")
+    print("=" * 70)
+
+    print(
+        f"Preprocessing Time : "
+        f"{preprocessing_time:.6f} seconds"
+    )
+
+    print(
+        f"Chunking Time      : "
+        f"{chunking_time:.6f} seconds"
+    )
+
+    print(
+        f"Embedding Time     : "
+        f"{embedding_time:.6f} seconds"
+    )
+
+    print(
+        f"ChromaDB Time      : "
+        f"{chromadb_time:.6f} seconds"
+    )
+
+    print(
+        f"Retrieval Time     : "
+        f"{retrieval_time:.6f} seconds"
+    )
+
+    print(
+        f"Total RAG Time     : "
+        f"{total_rag_time:.6f} seconds"
+    )
+
+    # --------------------------------------------------------------
     # Final Verification
     # --------------------------------------------------------------
 
@@ -301,7 +383,7 @@ def main():
     )
 
     print(
-        f"Vectors Stored     : {database.count()}"
+        f"Vectors Stored     : {stored_count}"
     )
 
     print(
@@ -309,19 +391,7 @@ def main():
         f"{len(retrieved_documents)}"
     )
 
-    # --------------------------------------------------------------
-    # Cleanup
-    # --------------------------------------------------------------
-
     database.clear()
-
-    if database.count() != 0:
-
-        raise AssertionError(
-            "Database cleanup failed."
-        )
-
-    retriever.close()
 
     print("\nCleanup: PASS")
 

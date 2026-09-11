@@ -20,10 +20,12 @@ class LLMClient:
         model="llama3.1:8b",
         base_url="http://localhost:11434",
         timeout=120,
+        num_predict=300,
     ):
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.num_predict = num_predict
 
     # ----------------------------------------------------------
     # Generate
@@ -61,6 +63,7 @@ class LLMClient:
             "stream": False,
             "options": {
                 "temperature": temperature,
+                "num_predict": self.num_predict,
             },
         }
 
@@ -113,6 +116,7 @@ class LLMClient:
                 "done",
                 None,
             ),
+            "num_predict": self.num_predict,
         }
 
         if "total_duration" in data:
@@ -228,6 +232,7 @@ class LLMClient:
             "model": self.model,
             "base_url": self.base_url,
             "timeout": self.timeout,
+            "num_predict": self.num_predict,
         }
 
     def __repr__(self):
@@ -235,5 +240,6 @@ class LLMClient:
         return (
             f"LLMClient("
             f"model='{self.model}', "
-            f"base_url='{self.base_url}')"
+            f"base_url='{self.base_url}', "
+            f"num_predict={self.num_predict})"
         )

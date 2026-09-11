@@ -1,8 +1,8 @@
 """
 chroma_database.py
 
-ChromaDB implementation for storing and searching
-log embeddings.
+ChromaDB implementation for storing
+and retrieving log embeddings.
 """
 
 from pathlib import Path
@@ -153,6 +153,7 @@ class ChromaDatabase(BaseVectorDatabase):
     def get(
         self,
         ids=None,
+        where=None,
     ):
         """
         Retrieve stored records.
@@ -161,14 +162,25 @@ class ChromaDatabase(BaseVectorDatabase):
         ----------
         ids : list, optional
             Specific IDs to retrieve.
+
+        where : dict, optional
+            ChromaDB metadata filter used to restrict
+            the retrieved records.
         """
 
-        if ids is None:
+        if ids is None and where is None:
 
             return self.collection.get()
 
+        if ids is not None:
+
+            return self.collection.get(
+                ids=list(ids),
+                where=where,
+            )
+
         return self.collection.get(
-            ids=list(ids)
+            where=where,
         )
 
     def close(self):

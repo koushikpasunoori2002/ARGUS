@@ -22,6 +22,11 @@ from backend.synchronization.synchronization_service import (
     SynchronizationService,
 )
 
+from backend.api.log_type_endpoints import (
+    router as log_type_router,
+)
+
+
 
 # ----------------------------------------------------------
 # Logging Configuration
@@ -206,6 +211,7 @@ app.add_middleware(
 app.include_router(status_router)
 app.include_router(analysis_router)
 app.include_router(server_router)
+app.include_router(log_type_router)
 
 
 # ----------------------------------------------------------

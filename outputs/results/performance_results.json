@@ -1,0 +1,33 @@
+{
+  "rag_pipeline": {
+    "preprocessing_seconds": 0.000707,
+    "chunking_seconds": 0.000069,
+    "embedding_seconds": 0.171184,
+    "chromadb_seconds": 0.040312,
+    "retrieval_seconds": 0.011441,
+    "pipeline_total_seconds": 0.223714,
+    "full_process_seconds": 13.5805147
+  },
+  "security_analysis": {
+    "queries_tested": 3,
+    "average_retrieval_seconds": 0.2001,
+    "average_prompt_build_seconds": 0.0002,
+    "average_llm_wall_seconds": 53.5282,
+    "average_ollama_seconds": 51.4403,
+    "full_process_seconds": 182.0197088,
+    "all_queries_relevant": true
+  },
+  "comparison": {
+    "rag_full_process_seconds": 13.5805147,
+    "security_analysis_full_process_seconds": 182.0197088,
+    "security_analysis_to_rag_ratio": 13.4007
+  },
+  "methodology": {
+    "embedding_model": "all-MiniLM-L6-v2",
+    "embedding_dimension": 384,
+    "llm_model": "llama3.1:8b",
+    "security_analysis_queries": 3,
+    "rag_full_process_measurement": "PowerShell Measure-Command",
+    "security_analysis_full_process_measurement": "PowerShell Measure-Command"
+  }
+}

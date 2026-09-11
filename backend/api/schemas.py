@@ -18,7 +18,24 @@ class AnalyzeRequest(BaseModel):
 class AnalyzeResponse(BaseModel):
     """Response schema returned by the analysis endpoint."""
 
+    query: str
+
     answer: str
+
+    evidence: list[dict] = Field(
+        default_factory=list,
+        description="Retrieved log evidence related to the query.",
+    )
+
+    knowledge: list[dict] = Field(
+        default_factory=list,
+        description="Retrieved security knowledge used for interpretation.",
+    )
+
+    metadata: dict = Field(
+        default_factory=dict,
+        description="Analysis and retrieval metadata.",
+    )
 
 
 class ServerSchema(BaseModel):
@@ -33,7 +50,7 @@ class ServerSchema(BaseModel):
     name: str = Field(
         ...,
         min_length=1,
-        description="Display name of the server.",
+        description="Display name for the server.",
     )
 
     host: str = Field(

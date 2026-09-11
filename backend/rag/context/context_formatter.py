@@ -1,164 +1,251 @@
 """
 context_formatter.py
 
-Formats RAG context into structured text suitable
-for consumption by an LLM.
+Formats RAGContext into concise structured text for the LLM.
 """
-
-from .context import RAGContext
 
 
 class ContextFormatter:
     """
-    Converts RAGContext into readable LLM context.
+    Formats retrieved RAG context for LLM analysis.
     """
 
     def format(self, context):
-        """
-        Format a RAGContext object as text.
-        """
+        sections = [
+            self.format_query(context),
+            self.format_logs(context),
+            self.format_related_logs(context),
+            self.format_knowledge(context),
+            self.format_metadata(context),
+        ]
 
-        if not isinstance(context, RAGContext):
-            raise TypeError(
-                "context must be a RAGContext."
-            )
+        return "\n\n".join(sections)
 
-        sections = []
-
-        # ------------------------------------------------------
-        # Query
-        # ------------------------------------------------------
-
-        sections.append(
+    def format_query(self, context):
+        return (
             "USER QUERY\n"
-            "----------\n"
+            "==========\n"
             f"{context.query}"
         )
 
-        # ------------------------------------------------------
-        # Retrieved Logs
-        # ------------------------------------------------------
+    def format_logs(self, context):
+        lines = [
+            "RETRIEVED LOGS",
+            "==============",
+        ]
 
-        if context.log_results:
+        if not context.log_results:
+            lines.append(
+                "No semantic log results were retrieved."
+            )
+            return "\n".join(lines)
 
-            log_section = [
-                "RETRIEVED LOGS",
-                "--------------",
-            ]
-
-            for index, result in enumerate(
-                context.log_results,
-                start=1,
-            ):
-
-                log_section.append(
-                    f"\nLog Result {index}"
+        for index, result in enumerate(
+            context.log_results,
+            start=1,
+        ):
+            lines.extend(
+                self._format_log(
+                    result,
+                    index,
+                    "Log",
                 )
-
-                if isinstance(result, dict):
-
-                    for key, value in result.items():
-
-                        log_section.append(
-                            f"{key}: {value}"
-                        )
-
-                else:
-
-                    log_section.append(
-                        str(result)
-                    )
-
-            sections.append(
-                "\n".join(log_section)
             )
 
-        # ------------------------------------------------------
-        # Security Knowledge
-        # ------------------------------------------------------
+        return "\n".join(lines)
 
-        if context.knowledge_results:
+    def format_related_logs(self, context):
+        lines = [
+            "RELATED LOGS",
+            "============",
+        ]
 
-            knowledge_section = [
-                "SECURITY KNOWLEDGE",
-                "------------------",
-            ]
+        if not context.related_log_results:
+            lines.append(
+                "No related log results were retrieved."
+            )
+            return "\n".join(lines)
 
-            for index, result in enumerate(
-                context.knowledge_results,
-                start=1,
-            ):
-
-                knowledge_section.append(
-                    f"\nKnowledge Result {index}"
+        for index, result in enumerate(
+            context.related_log_results,
+            start=1,
+        ):
+            lines.extend(
+                self._format_log(
+                    result,
+                    index,
+                    "Related Log",
                 )
-
-                if isinstance(result, dict):
-
-                    for key, value in result.items():
-
-                        knowledge_section.append(
-                            f"{key}: {value}"
-                        )
-
-                else:
-
-                    knowledge_section.append(
-                        str(result)
-                    )
-
-            sections.append(
-                "\n".join(knowledge_section)
             )
 
-        # ------------------------------------------------------
-        # Metadata
-        # ------------------------------------------------------
+        return "\n".join(lines)
 
-        if context.metadata:
-
-            metadata_section = [
-                "CONTEXT METADATA",
-                "-----------------",
-            ]
-
-            for key, value in context.metadata.items():
-
-                metadata_section.append(
-                    f"{key}: {value}"
-                )
-
-            sections.append(
-                "\n".join(metadata_section)
-            )
-
-        # ------------------------------------------------------
-        # Final context
-        # ------------------------------------------------------
-
-        return "\n\n".join(
-            sections
+    def _format_log(
+        self,
+        result,
+        index,
+        label,
+    ):
+        metadata = result.get(
+            "metadata",
+            {},
         )
 
-    def format_for_prompt(self, context):
-        """
-        Format context with instructions for an LLM.
-        """
-
-        formatted_context = self.format(
-            context
+        lines = [
+            f"\n{label} {index}",
+        ]
+        self._add_field(
+            lines,
+            "Document",
+            result.get("document"),
+        )
+        self._add_field(
+            lines,
+            "ID",
+            result.get("id"),
         )
 
+        self._add_field(
+            lines,
+            "Timestamp",
+            metadata.get("timestamp"),
+        )
+
+        self._add_field(
+            lines,
+            "Source",
+            metadata.get("source"),
+        )
+
+        self._add_field(
+            lines,
+            "Hostname",
+            metadata.get("hostname"),
+        )
+
+        self._add_field(
+            lines,
+            "Process",
+            metadata.get("process"),
+        )
+
+        self._add_field(
+            lines,
+            "Log Type",
+            metadata.get("log_type"),
+        )
+
+        self._add_field(
+            lines,
+            "Severity",
+            metadata.get("severity"),
+        )
+
+        self._add_field(
+            lines,
+            "Event",
+            metadata.get("event"),
+        )
+
+        self._add_field(
+            lines,
+            "Event Type",
+            metadata.get("event_type"),
+        )
+
+        self._add_field(
+            lines,
+            "User",
+            metadata.get("user"),
+        )
+
+        self._add_field(
+            lines,
+            "IP",
+            metadata.get("ip"),
+        )
+
+        self._add_field(
+            lines,
+            "Port",
+            metadata.get("port"),
+        )
+
+        self._add_field(
+            lines,
+            "Message",
+            metadata.get("message"),
+        )
+
+        return lines
+
+    def _add_field(
+        self,
+        lines,
+        name,
+        value,
+    ):
+        if value is not None and value != "":
+            lines.append(
+                f"{name}: {value}"
+            )
+
+    def format_knowledge(self, context):
+        lines = [
+            "SECURITY KNOWLEDGE",
+            "==================",
+        ]
+
+        if not context.knowledge_results:
+            lines.append(
+                "No security knowledge was retrieved."
+            )
+            return "\n".join(lines)
+
+        for index, result in enumerate(
+            context.knowledge_results,
+            start=1,
+        ):
+            lines.append(
+                f"\nKnowledge {index}"
+            )
+
+            self._add_field(
+                lines,
+                "ID",
+                result.get("id"),
+            )
+
+            self._add_field(
+                lines,
+                "Document",
+                result.get("document"),
+            )
+
+        return "\n".join(lines)
+
+    def format_metadata(self, context):
         return (
-            "Use the following retrieved information "
-            "to analyse the user's security query.\n\n"
-            f"{formatted_context}\n\n"
-            "Base the analysis on the retrieved evidence."
+            "CONTEXT METADATA\n"
+            "================\n"
+            f"Log count: {context.log_count()}\n"
+            f"Related log count: "
+            f"{context.related_log_count()}\n"
+            f"Knowledge count: "
+            f"{context.knowledge_count()}"
         )
 
-    def __call__(self, context):
-        """
-        Allow the formatter to be called directly.
-        """
+    def info(self):
+        return {
+            "formatter": self.__class__.__name__,
+            "sections": [
+                "user_query",
+                "retrieved_logs",
+                "related_logs",
+                "security_knowledge",
+                "context_metadata",
+            ],
+        }
 
-        return self.format(context)
+    def __repr__(self):
+        return "ContextFormatter()"
