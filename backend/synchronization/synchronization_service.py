@@ -9,6 +9,8 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from backend.ingestion.incremental_log_ingestor import IncrementalLogIngestor
+
 from .models.sync_source import SyncSource
 from .models.sync_status import SyncStatus
 from .rsync_executor import RsyncResult
@@ -23,13 +25,28 @@ class SynchronizationService:
     Provides application-level synchronization operations,
     maintains synchronization status, and supports independent
     per-server scheduling.
+
+    Successful rsync operations are followed by incremental log
+    ingestion so that newly synchronized records are added to the
+    retrieval database while existing records are skipped.
     """
 
     def __init__(
         self,
         manager: SyncManager | None = None,
+        ingestor: IncrementalLogIngestor | None = None,
     ) -> None:
-        self.manager = manager or SyncManager()
+        self.manager = (
+            manager
+            if manager is not None
+            else SyncManager()
+        )
+
+        self.ingestor = (
+            ingestor
+            if ingestor is not None
+            else IncrementalLogIngestor()
+        )
 
         self._statuses: dict[str, SyncStatus] = {}
 
@@ -58,8 +75,12 @@ class SynchronizationService:
         Synchronize one configured source and update its status.
 
         The source status is changed to running before the rsync
-        operation begins and then updated to success or failed
-        when the operation finishes.
+        operation begins.
+
+        When rsync succeeds, the synchronized local directory is
+        passed to the incremental ingestion layer. Ingestion
+        failures are logged separately and do not change a
+        successful rsync result into a failed synchronization.
         """
 
         if not isinstance(source, SyncSource):
@@ -112,7 +133,7 @@ class SynchronizationService:
             )
 
         # ------------------------------------------------------
-        # Record result
+        # Record rsync result
         # ------------------------------------------------------
 
         if result.success:
@@ -125,6 +146,52 @@ class SynchronizationService:
                 source.source_id,
                 source.sync_interval,
             )
+
+            # --------------------------------------------------
+            # Incremental log ingestion
+            # --------------------------------------------------
+            #
+            # Rsync must complete successfully before ingestion
+            # begins. Ingestion failures are deliberately handled
+            # independently so that a successful file transfer is
+            # not incorrectly reported as an rsync failure.
+            # --------------------------------------------------
+
+            try:
+
+                ingestion_result = (
+                    self.ingestor.ingest_source(
+                        source.source_id,
+                        source.local_path,
+                    )
+                )
+
+                logger.info(
+                    "Incremental log ingestion completed: %s "
+                    "(new_records=%s, duplicates_skipped=%s, "
+                    "vectors_stored=%s)",
+                    source.source_id,
+                    ingestion_result.get(
+                        "new_records",
+                        0,
+                    ),
+                    ingestion_result.get(
+                        "duplicates_skipped",
+                        0,
+                    ),
+                    ingestion_result.get(
+                        "vectors_stored",
+                        0,
+                    ),
+                )
+
+            except Exception:
+
+                logger.exception(
+                    "Incremental log ingestion failed after "
+                    "successful synchronization: %s",
+                    source.source_id,
+                )
 
         else:
 

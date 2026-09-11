@@ -14,48 +14,65 @@ SCENARIOS = [
     {
         "name": "SSH Brute Force",
         "query": "failed SSH authentication brute force attack",
-        "keywords": [
-            "ssh",
-            "authentication",
-            "brute",
-            "attack",
+        "concepts": [
+            ["ssh"],
+            ["authentication", "login"],
+            ["brute", "brute-force"],
+            ["attack", "attempt"],
         ],
     },
     {
         "name": "Privilege Escalation",
         "query": "suspicious sudo privilege escalation activity",
-        "keywords": [
-            "sudo",
-            "privilege",
-            "escalation",
+        "concepts": [
+            ["sudo"],
+            ["privilege"],
+            ["escalation"],
         ],
     },
     {
         "name": "Malware Activity",
         "query": "possible malware execution detected in system logs",
-        "keywords": [
-            "malware",
-            "execution",
+        "concepts": [
+            ["malware", "malicious"],
+            ["execution", "execute", "executing", "code execution"],
         ],
     },
     {
-        "name": "Network Scanning",
-        "query": "possible network scanning and suspicious connection attempts",
-        "keywords": [
-            "network",
-            "scanning",
-            "connection",
+        "name": "SSH Service Exposure",
+        "query": "SSH service listening on port 22",
+        "concepts": [
+            ["ssh", "sshd"],
+            ["listening"],
+            ["port", "22"],
         ],
     },
     {
         "name": "Repeated Login Failures",
         "query": "repeated failed login attempts",
-        "keywords": [
-            "login",
-            "failed",
+        "concepts": [
+            ["login", "authentication"],
+            ["failed", "failure", "failures"],
         ],
     },
 ]
+
+
+def _concept_matches(answer, concepts):
+    """
+    Check whether the answer addresses at least one term
+    from every required security concept group.
+    """
+
+    answer_lower = answer.lower()
+
+    return all(
+        any(
+            term.lower() in answer_lower
+            for term in concept
+        )
+        for concept in concepts
+    )
 
 
 def analyse_scenario(scenario):
@@ -80,15 +97,12 @@ def analyse_scenario(scenario):
     if not answer.strip():
         return False, response, ""
 
-    answer_lower = answer.lower()
-
-    keyword_matches = sum(
-        1
-        for keyword in scenario["keywords"]
-        if keyword.lower() in answer_lower
+    passed = _concept_matches(
+        answer,
+        scenario["concepts"],
     )
 
-    return keyword_matches >= 1, response, answer
+    return passed, response, answer
 
 
 def test_ssh_brute_force():
@@ -121,7 +135,7 @@ def test_malware_activity():
     assert answer.strip()
 
 
-def test_network_scanning():
+def test_ssh_service_exposure():
     passed, response, answer = analyse_scenario(
         SCENARIOS[3]
     )

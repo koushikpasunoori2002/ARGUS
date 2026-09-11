@@ -35,6 +35,33 @@ class FakeExecutor:
         return self.result
 
 
+class FakeIngestor:
+    """Test double for incremental log ingestion."""
+
+    def __init__(self):
+        self.calls = []
+
+    def ingest_source(
+        self,
+        source_id: str,
+        local_path: str,
+    ):
+        """Record an ingestion request."""
+        self.calls.append(
+            {
+                "source_id": source_id,
+                "local_path": local_path,
+            }
+        )
+
+        return {
+            "source_id": source_id,
+            "new_records": 1,
+            "duplicates_skipped": 0,
+            "vectors_stored": 1,
+        }
+
+
 def create_source() -> SyncSource:
     """Create a valid synchronization source."""
     return SyncSource(
@@ -215,6 +242,7 @@ def test_failed_source_does_not_block_other_source():
 
     assert len(executor.calls) == 2
 
+
 def test_scheduled_source_failure_does_not_block_other_source():
     """Verify a scheduled failure does not block another source."""
 
@@ -332,6 +360,7 @@ def test_scheduled_source_failure_does_not_block_other_source():
 
     assert len(executor.calls) == 2
 
+
 def test_failed_source_can_succeed_on_later_attempt():
     """Verify a failed source can recover on a later synchronization."""
 
@@ -412,6 +441,7 @@ def test_failed_source_can_succeed_on_later_attempt():
 
     assert executor.attempts == 2
 
+
 def test_sources_use_independent_sync_intervals():
     """Verify each source maintains its own synchronization schedule."""
 
@@ -447,7 +477,9 @@ def test_sources_use_independent_sync_intervals():
     service = SynchronizationService(
         manager=SyncManager(
             executor=executor
-        )
+        ),
+        ingestor=FakeIngestor(),
+
     )
 
     fast_source = SyncSource(
@@ -515,6 +547,7 @@ def test_sources_use_independent_sync_intervals():
     ) >= 8
 
     assert len(executor.calls) == 2
+
 
 def test_running_source_is_not_scheduled_twice():
     """Verify a source already running is not submitted again."""
@@ -612,6 +645,7 @@ def test_running_source_is_not_scheduled_twice():
     assert status.status == "success"
     assert executor.calls == 1
 
+
 def test_continuous_scheduler_stops_cleanly():
     """Verify the continuous scheduler stops when requested."""
 
@@ -622,15 +656,19 @@ def test_continuous_scheduler_stops_cleanly():
 
     def sources_provider():
         """Provide no sources while testing scheduler shutdown."""
+
         scheduler_started.set()
+
         return []
 
     def run_scheduler():
         """Run the scheduler in a test thread."""
+
         service.start_continuous_sync(
             sources_provider,
             check_interval=0.01,
         )
+
         scheduler_stopped.set()
 
     scheduler_thread = threading.Thread(
@@ -653,6 +691,7 @@ def test_continuous_scheduler_stops_cleanly():
     assert not scheduler_thread.is_alive()
     assert scheduler_stopped.is_set()
 
+
 def test_scheduler_continues_after_provider_error():
     """Verify a provider error does not terminate the scheduler."""
 
@@ -667,11 +706,15 @@ def test_scheduler_continues_after_provider_error():
         """Raise once, then continue returning no sources."""
 
         calls["count"] += 1
+
         scheduler_started.set()
 
         if calls["count"] == 1:
             provider_failed.set()
-            raise RuntimeError("temporary provider failure")
+
+            raise RuntimeError(
+                "temporary provider failure"
+            )
 
         return []
 
@@ -717,6 +760,7 @@ def test_scheduler_continues_after_provider_error():
 
     assert not scheduler_thread.is_alive()
 
+
 def test_worker_exception_is_isolated():
     """Verify an unexpected worker exception is recorded as a failure."""
 
@@ -734,6 +778,7 @@ def test_worker_exception_is_isolated():
             options=None,
         ) -> RsyncResult:
             """Raise an unexpected synchronization exception."""
+
             raise RuntimeError(
                 "unexpected synchronization error"
             )
@@ -867,3 +912,118 @@ def test_info_reports_tracked_source_count():
     service.synchronize(create_source())
 
     assert service.info()["tracked_sources"] == 1
+
+def test_successful_sync_triggers_incremental_ingestion():
+    """Verify successful rsync triggers incremental log ingestion."""
+
+    executor = FakeExecutor(
+        RsyncResult(
+            success=True,
+            return_code=0,
+            stdout="sync completed",
+            stderr="",
+        )
+    )
+
+    ingestor = FakeIngestor()
+
+    service = SynchronizationService(
+        manager=SyncManager(
+            executor=executor
+        ),
+        ingestor=ingestor,
+    )
+
+    source = create_source()
+
+    result = service.synchronize(source)
+
+    assert result.success is True
+
+    assert len(ingestor.calls) == 1
+
+    assert ingestor.calls[0]["source_id"] == (
+        source.source_id
+    )
+
+    assert ingestor.calls[0]["local_path"] == (
+        source.local_path
+    )
+
+
+def test_failed_sync_does_not_trigger_incremental_ingestion():
+    """Verify failed rsync does not trigger log ingestion."""
+
+    executor = FakeExecutor(
+        RsyncResult(
+            success=False,
+            return_code=255,
+            stdout="",
+            stderr="connection refused",
+        )
+    )
+
+    ingestor = FakeIngestor()
+
+    service = SynchronizationService(
+        manager=SyncManager(
+            executor=executor
+        ),
+        ingestor=ingestor,
+    )
+
+    source = create_source()
+
+    result = service.synchronize(source)
+
+    assert result.success is False
+
+    assert len(ingestor.calls) == 0
+
+
+def test_ingestion_failure_does_not_fail_successful_sync():
+    """Verify ingestion failure does not change a successful rsync result."""
+
+    class FailingIngestor:
+        """Test double that raises during incremental ingestion."""
+
+        def ingest_source(
+            self,
+            source_id: str,
+            local_path: str,
+        ):
+            """Raise an ingestion error."""
+            raise RuntimeError(
+                "incremental ingestion failed"
+            )
+
+    executor = FakeExecutor(
+        RsyncResult(
+            success=True,
+            return_code=0,
+            stdout="sync completed",
+            stderr="",
+        )
+    )
+
+    service = SynchronizationService(
+        manager=SyncManager(
+            executor=executor
+        ),
+        ingestor=FailingIngestor(),
+    )
+
+    source = create_source()
+
+    result = service.synchronize(source)
+
+    assert result.success is True
+    assert result.return_code == 0
+
+    status = service.get_status(
+        source.source_id
+    )
+
+    assert status is not None
+    assert status.status == "success"
+    assert status.error_message is None
