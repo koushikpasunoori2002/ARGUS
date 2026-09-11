@@ -594,9 +594,6 @@ class SynchronizationService:
 
         with self._state_lock:
 
-            if source.source_id in self._running_sources:
-                return 0
-
             next_sync = self._next_sync_times.get(
                 source.source_id
             )
