@@ -32,6 +32,11 @@ class AnalyzeResponse(BaseModel):
         description="Retrieved log evidence related to the query.",
     )
 
+    related_log_results: list[dict] = Field(
+        default_factory=list,
+        description="Log records related to the retrieved evidence.",
+    )
+
     knowledge: list[dict] = Field(
         default_factory=list,
         description="Retrieved security knowledge used for interpretation.",

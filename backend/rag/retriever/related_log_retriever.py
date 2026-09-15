@@ -18,14 +18,18 @@ class RelatedLogRetriever:
         self,
         database: Optional[ChromaDatabase] = None,
         time_window_seconds: int = 60,
+        max_results: int = 20,
     ):
         if time_window_seconds <= 0:
             raise ValueError("time_window_seconds must be greater than 0.")
+        if max_results <= 0:
+            raise ValueError("max_results must be greater than 0.")
 
         self.database = (
             database if database is not None else ChromaDatabase()
         )
         self.time_window_seconds = time_window_seconds
+        self.max_results = max_results
 
     def retrieve(
         self,
@@ -96,7 +100,7 @@ class RelatedLogRetriever:
         return sorted(
             related_records.values(),
             key=self._timestamp_sort_key,
-        )
+        )[:self.max_results]
 
     def _matches_optional_identity(
         self,
@@ -240,6 +244,7 @@ class RelatedLogRetriever:
 
         return {
             "time_window_seconds": self.time_window_seconds,
+            "max_results": self.max_results,
             "database": self.database.info(),
         }
 

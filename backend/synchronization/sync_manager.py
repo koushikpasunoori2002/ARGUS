@@ -84,7 +84,7 @@ class SyncManager:
             )
 
             return self.executor.sync(
-                source=str(local_source),
+                source=str(local_source) + "/",
                 destination=destination,
                 options=source.rsync_options,
             )

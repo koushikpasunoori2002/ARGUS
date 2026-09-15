@@ -15,13 +15,15 @@ from backend.database.chroma import ChromaDatabase
 
 from backend.rag.context import ContextBuilder
 from backend.rag.retriever import Retriever
+from backend.rag.retriever.related_log_retriever import RelatedLogRetriever
 from backend.knowledge.knowledge_retriever import KnowledgeRetriever
-
+from backend.llm.embeddings import EmbeddingManager
 from backend.llm.generation import RAGAnalyzer
 
 
 router = APIRouter()
 
+embedding_manager = EmbeddingManager()
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 def analyze(request: AnalyzeRequest):
@@ -39,8 +41,15 @@ def analyze(request: AnalyzeRequest):
     # ----------------------------------------------------------
 
     log_retriever = Retriever(
+        embedding_manager=embedding_manager,
         top_k=3
     )
+
+    # ----------------------------------------------------------
+    # Related log retrieval
+    # ----------------------------------------------------------
+
+    related_log_retriever = RelatedLogRetriever()
 
     # ----------------------------------------------------------
     # Security knowledge retrieval
@@ -52,6 +61,7 @@ def analyze(request: AnalyzeRequest):
 
     knowledge_retriever = KnowledgeRetriever(
         database=knowledge_database,
+        embedding_manager=embedding_manager,
         top_k=3
     )
 
@@ -62,6 +72,7 @@ def analyze(request: AnalyzeRequest):
     context_builder = ContextBuilder(
         log_retriever=log_retriever,
         knowledge_retriever=knowledge_retriever,
+        related_log_retriever=related_log_retriever,
         top_k_logs=3,
         top_k_knowledge=3
     )
@@ -90,6 +101,9 @@ def analyze(request: AnalyzeRequest):
         "log_count": len(
             context.log_results
         ),
+        "related_log_count": len(
+            context.related_log_results
+        ),
         "knowledge_count": len(
             context.knowledge_results
         ),
@@ -106,6 +120,7 @@ def analyze(request: AnalyzeRequest):
         query=query,
         answer=response.answer,
         evidence=context.log_results,
+        related_log_results=context.related_log_results,
         knowledge=context.knowledge_results,
         metadata=metadata,
     )

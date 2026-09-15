@@ -25,10 +25,10 @@ def test_incremental_ingestion_skips_duplicates(tmp_path):
     source_file = source_directory / "auth.log"
 
     source_file.write_text(
-        "Aug 10 10:00:00 test sshd[1234]: "
+        "2026-08-10T10:00:00+00:00 test sshd[1234]: "
         "Failed password for invalid user admin "
         "from 192.168.1.10 port 22 ssh2\n"
-        "Aug 10 10:01:00 test sshd[1234]: "
+        "2026-08-10T10:01:00+00:00 test sshd[1234]: "
         "Accepted password for user admin "
         "from 192.168.1.10 port 22 ssh2\n",
         encoding="utf-8",
@@ -88,7 +88,7 @@ def test_incremental_ingestion_indexes_new_records(tmp_path):
     source_file = source_directory / "auth.log"
 
     source_file.write_text(
-        "Aug 10 10:00:00 test sshd[1234]: "
+        "2026-08-10T10:00:00+00:00 test sshd[1234]: "
         "Failed password for invalid user admin "
         "from 192.168.1.10 port 22 ssh2\n",
         encoding="utf-8",
@@ -117,7 +117,7 @@ def test_incremental_ingestion_indexes_new_records(tmp_path):
     ) as file:
 
         file.write(
-            "Aug 10 10:02:00 test sshd[1234]: "
+            "2026-08-10T10:02:00+00:00 test sshd[1234]: "
             "Failed password for invalid user root "
             "from 192.168.1.20 port 22 ssh2\n"
         )
@@ -134,5 +134,51 @@ def test_incremental_ingestion_indexes_new_records(tmp_path):
     assert second_result["vectors_stored"] == 1
 
     assert database.count() == 2
+
+    database.clear()
+
+def test_incremental_ingestion_skips_duplicate_records_in_same_batch(tmp_path):
+    """
+    Verify that duplicate records within one ingestion batch
+    are indexed only once.
+    """
+
+    source_directory = tmp_path / "server-a"
+    source_directory.mkdir()
+
+    source_file = source_directory / "auth.log"
+
+    duplicate_line = (
+        "2026-08-10T10:00:00+00:00 test sshd[1234]: "
+        "Failed password for invalid user admin "
+        "from 192.168.1.10 port 22 ssh2\n"
+    )
+
+    source_file.write_text(
+        duplicate_line + duplicate_line,
+        encoding="utf-8",
+    )
+
+    database = ChromaDatabase(
+        persist_directory=tmp_path / "chroma",
+        collection_name="incremental_same_batch_duplicates_test",
+    )
+
+    ingestor = IncrementalLogIngestor(
+        database=database,
+    )
+
+    result = ingestor.ingest_source(
+        source_id="server-a",
+        local_path=source_directory,
+    )
+
+    assert result["records_parsed"] == 2
+    assert result["new_records"] == 1
+    assert result["duplicates_skipped"] == 1
+    assert result["embeddings_created"] == 1
+    assert result["vectors_stored"] == 1
+
+    assert database.count() == 1
 
     database.clear()

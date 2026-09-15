@@ -4,7 +4,6 @@ retriever.py
 Retrieves relevant log chunks from the vector database.
 """
 
-from certifi import where
 
 from backend.llm.embeddings import EmbeddingManager
 from backend.database.chroma import ChromaDatabase
@@ -112,7 +111,14 @@ class Retriever:
                 )
 
             where = {
-                "source_id": str(source_id).strip()
+                "$or": [
+                    {
+                        "source_id": str(source_id).strip()
+                    },
+                    {
+                        "source": str(source_id).strip()
+                    }
+                ]
             }
 
         return self.database.search(

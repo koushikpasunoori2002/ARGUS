@@ -77,6 +77,7 @@ class IncrementalLogIngestor:
 
         records_parsed = 0
         new_records = []
+        new_record_ids = set()
         duplicate_records = 0
         files_processed = 0
 
@@ -106,9 +107,11 @@ class IncrementalLogIngestor:
                     ids=[record_id]
                 )
 
-                if existing.get("ids"):
+                if existing.get("ids") or record_id in new_record_ids:
                     duplicate_records += 1
                     continue
+
+                new_record_ids.add(record_id)
 
                 chunk_manager = ChunkManager(
                     chunk_size=500,
@@ -162,12 +165,17 @@ class IncrementalLogIngestor:
 
                 metadatas.append(metadata)
 
-            self.database.add(
-                ids=ids,
-                embeddings=embeddings,
-                documents=documents,
-                metadatas=metadatas,
-            )
+            batch_size = 5000
+
+            for start in range(0, len(ids), batch_size):
+                end = start + batch_size
+
+                self.database.add(
+                    ids=ids[start:end],
+                    embeddings=embeddings[start:end],
+                    documents=documents[start:end],
+                    metadatas=metadatas[start:end],
+                )
 
         return {
             "source_id": source_id,

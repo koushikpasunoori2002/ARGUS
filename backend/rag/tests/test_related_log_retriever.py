@@ -104,3 +104,25 @@ def test_related_log_retrieval_handles_empty_results():
             "distances": [[]],
         }
     ) == []
+
+
+def test_related_log_retrieval_respects_max_results():
+    """
+    Related retrieval should not return more records than the configured limit.
+    """
+
+    retriever = Retriever(top_k=3)
+
+    seed_results = retriever.retrieve(
+        "failed SSH authentication brute force attack"
+    )
+
+    related_retriever = RelatedLogRetriever(
+        database=retriever.database,
+        time_window_seconds=60,
+        max_results=5,
+    )
+
+    related_results = related_retriever.retrieve(seed_results)
+
+    assert len(related_results) <= 5

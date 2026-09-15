@@ -17,7 +17,8 @@ const resultBox =
 
 const statusBox =
     document.getElementById("status");
-
+const analysisServerSelect =
+    document.getElementById("analysis-server");
 
 
 // ==========================================================
@@ -306,11 +307,44 @@ async function loadServers() {
             );
         }
 
-        const servers =
+        const serverData =
             await response.json();
 
-        renderServers(servers);
+        const servers =
+            Array.isArray(serverData)
+                ? serverData
+                : serverData.value || [];
 
+        renderServers(servers);
+        renderAnalysisServers(servers);
+        function renderAnalysisServers(servers) {
+
+            if (!analysisServerSelect) {
+                return;
+            }
+
+            analysisServerSelect.innerHTML = `
+                <option value="">
+                    All Servers
+                </option>
+            `;
+
+            servers.forEach(server => {
+
+                const option =
+                    document.createElement("option");
+
+                option.value =
+                    server.source_id;
+
+                option.textContent =
+                    server.name;
+
+                analysisServerSelect.appendChild(
+                    option
+                );
+            });
+        }
     } catch (error) {
 
         console.error(error);
@@ -1386,7 +1420,10 @@ async function analyzeSecurity() {
 
     const query =
         queryInput.value.trim();
-
+    const sourceId =
+        analysisServerSelect
+            ? analysisServerSelect.value
+            : "";
     if (!query) {
 
         statusBox.textContent =
@@ -1422,7 +1459,8 @@ async function analyzeSecurity() {
 
                     body:
                         JSON.stringify({
-                            query: query
+                            query: query,
+                            source_id: sourceId || null
                         })
                 }
             );
@@ -1462,6 +1500,13 @@ async function analyzeSecurity() {
         resultBox.textContent =
             data.answer || "";
 
+        updateAnalysisCounts(data);
+
+        renderRelatedLogs(
+            data.related_log_results
+        );
+
+
         statusBox.textContent =
             "Analysis completed successfully.";
 
@@ -1488,7 +1533,115 @@ async function analyzeSecurity() {
     }
 }
 
+// ==========================================================
+// Update quantitative analysis counts
+// ==========================================================
 
+function updateAnalysisCounts(data) {
+
+    const metadata =
+        data && data.metadata
+            ? data.metadata
+            : {};
+
+    const logEvidenceCount =
+        document.getElementById(
+            "log-evidence-count"
+        );
+
+    const knowledgeEvidenceCount =
+        document.getElementById(
+            "knowledge-evidence-count"
+        );
+
+    const relatedLogCount =
+        document.getElementById(
+            "related-log-count"
+        );
+
+    if (logEvidenceCount) {
+        logEvidenceCount.textContent =
+            metadata.log_count ?? 0;
+    }
+
+    if (knowledgeEvidenceCount) {
+        knowledgeEvidenceCount.textContent =
+            metadata.knowledge_count ?? 0;
+    }
+
+    if (relatedLogCount) {
+        relatedLogCount.textContent =
+            metadata.related_log_count ?? 0;
+    }
+}
+
+// ==========================================================
+// Display query-related logs
+// ==========================================================
+
+function renderRelatedLogs(logs) {
+
+    const relatedLogs =
+        document.getElementById(
+            "related-logs"
+        );
+
+    if (!relatedLogs) {
+        return;
+    }
+
+    if (!logs || logs.length === 0) {
+        relatedLogs.textContent =
+            "No query-related logs were retrieved.";
+        return;
+    }
+
+    relatedLogs.innerHTML =
+        logs
+            .map((log, index) => {
+
+                const metadata =
+                    log.metadata || {};
+
+                return `
+                    <div class="related-log-item">
+                        <div>
+                            <strong>
+                                ${index + 1}.
+                            </strong>
+                        </div>
+                        <div>
+                            <strong>
+                                ${escapeHtml(
+                                    metadata.timestamp ||
+                                    "Unknown time"
+                                )}
+                            </strong>
+                        </div>
+
+                        <div>
+                            ${escapeHtml(
+                                metadata.source ||
+                                "Unknown source"
+                            )}
+                            ·
+                            ${escapeHtml(
+                                metadata.process ||
+                                "Unknown process"
+                            )}
+                        </div>
+
+                        <div>
+                            ${escapeHtml(
+                                log.document ||
+                                "No log message available."
+                            )}
+                        </div>
+                    </div>
+                `;
+            })
+            .join("");
+}
 
 // ==========================================================
 // Event listeners
