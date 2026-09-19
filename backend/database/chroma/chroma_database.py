@@ -61,7 +61,7 @@ class ChromaDatabase(BaseVectorDatabase):
             self.client.get_or_create_collection(
                 name=self.collection_name,
                 metadata={
-                    "description": "LogLlamalyzer log embeddings"
+                    "description": "ARGUS log embeddings"
                 },
             )
         )

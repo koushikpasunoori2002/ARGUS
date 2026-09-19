@@ -2,7 +2,7 @@
 log_record.py
 
 Defines the standard LogRecord model used throughout
-the LogLlamalyzer preprocessing pipeline.
+the ARGUS preprocessing pipeline.
 """
 
 from dataclasses import dataclass, asdict

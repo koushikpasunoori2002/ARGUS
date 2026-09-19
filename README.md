@@ -1,6 +1,6 @@
-# LogLlamalyzer
+# ARGUS
 
-LogLlamalyzer is an AI-powered security log analysis system that combines security log retrieval, security knowledge retrieval, Retrieval-Augmented Generation (RAG), and a local language model to analyse security-related queries.
+ARGUS is an AI-powered security log analysis system that combines security log retrieval, security knowledge retrieval, Retrieval-Augmented Generation (RAG), and a local language model to analyse security-related queries.
 
 The system provides a FastAPI backend and a lightweight web frontend for submitting security queries and displaying generated security analysis.
 
@@ -8,7 +8,7 @@ The system provides a FastAPI backend and a lightweight web frontend for submitt
 
 ## Project Objectives
 
-The main objectives of LogLlamalyzer are to:
+The main objectives of ARGUS are to:
 
 - Process and analyse security log data.
 - Retrieve relevant log information for a security query.

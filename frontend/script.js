@@ -1,5 +1,11 @@
 const API_URL = "http://127.0.0.1:8001";
 
+const SESSION_QUERY_KEY =
+    "logllamalyzer-query";
+
+const SESSION_SYNC_KEY =
+    "logllamalyzer-sync-enabled";
+
 
 
 // ==========================================================
@@ -105,6 +111,16 @@ const cancelServerButton =
 const syncStatusList =
     document.getElementById(
         "sync-status-list"
+    );
+
+const syncToggleButton =
+    document.getElementById(
+        "sync-toggle-button"
+    );
+
+const globalSyncStatus =
+    document.getElementById(
+        "global-sync-status"
     );
 
 
@@ -1106,6 +1122,177 @@ async function deleteServer(
 
 
 // ==========================================================
+// Global synchronization control
+// ==========================================================
+
+function updateGlobalSyncStatus(enabled) {
+
+    if (globalSyncStatus) {
+
+        globalSyncStatus.textContent =
+            enabled
+                ? "ON"
+                : "OFF";
+
+    }
+
+}
+
+
+async function setSynchronization(enabled) {
+
+    if (!syncToggleButton) {
+        return;
+    }
+
+    syncToggleButton.disabled = true;
+
+    try {
+
+        const endpoint =
+            enabled
+                ? "/sync/start"
+                : "/sync/stop";
+
+        const response =
+            await fetch(
+                `${API_URL}${endpoint}`,
+                {
+                    method: "POST"
+                }
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Synchronization request failed: ${response.status}`
+            );
+
+        }
+
+        updateGlobalSyncStatus(
+            enabled
+        );
+
+        sessionStorage.setItem(
+            SESSION_SYNC_KEY,
+            String(enabled)
+        );
+
+        await loadSyncStatus();
+
+    } catch (error) {
+
+        console.error(
+            "Unable to change synchronization state:",
+            error
+        );
+
+        syncToggleButton.checked =
+            !enabled;
+
+        updateGlobalSyncStatus(
+            !enabled
+        );
+
+        sessionStorage.setItem(
+            SESSION_SYNC_KEY,
+            String(!enabled)
+        );
+
+        alert(
+            error.message ||
+            "Unable to change synchronization state."
+        );
+
+    } finally {
+
+        syncToggleButton.disabled =
+            false;
+
+    }
+
+}
+
+
+async function initializeSynchronizationControl() {
+
+    if (!syncToggleButton) {
+        return;
+    }
+
+    const savedSyncState =
+        sessionStorage.getItem(
+            SESSION_SYNC_KEY
+        );
+
+    const savedEnabled =
+        savedSyncState === "true";
+
+    syncToggleButton.checked =
+        savedEnabled;
+
+    updateGlobalSyncStatus(
+        savedEnabled
+    );
+
+    syncToggleButton.addEventListener(
+        "change",
+        () => {
+
+            setSynchronization(
+                syncToggleButton.checked
+            );
+
+        }
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/sync/status`
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Synchronization status request failed: ${response.status}`
+            );
+
+        }
+
+        const data =
+            await response.json();
+
+        const enabled =
+            data.enabled === true;
+
+        syncToggleButton.checked =
+            enabled;
+
+        updateGlobalSyncStatus(
+            enabled
+        );
+
+        sessionStorage.setItem(
+            SESSION_SYNC_KEY,
+            String(enabled)
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Unable to load global synchronization state. Using session state:",
+            error
+        );
+
+    }
+
+}
+
+
+// ==========================================================
 // Load live rsync status
 // ==========================================================
 
@@ -1413,6 +1600,45 @@ function renderLogTypes(
 
 
 // ==========================================================
+// Preserve query during frontend refresh
+// ==========================================================
+
+function saveQueryToSession() {
+
+    if (!queryInput) {
+        return;
+    }
+
+    sessionStorage.setItem(
+        SESSION_QUERY_KEY,
+        queryInput.value
+    );
+
+}
+
+
+function restoreQueryFromSession() {
+
+    if (!queryInput) {
+        return;
+    }
+
+    const savedQuery =
+        sessionStorage.getItem(
+            SESSION_QUERY_KEY
+        );
+
+    if (savedQuery !== null) {
+
+        queryInput.value =
+            savedQuery;
+
+    }
+
+}
+
+
+// ==========================================================
 // Analyse security query
 // ==========================================================
 
@@ -1420,6 +1646,9 @@ async function analyzeSecurity() {
 
     const query =
         queryInput.value.trim();
+
+    saveQueryToSession();
+
     const sourceId =
         analysisServerSelect
             ? analysisServerSelect.value
@@ -1521,7 +1750,7 @@ async function analyzeSecurity() {
             error.message ||
             (
                 "Unable to connect to the " +
-                "LogLlamalyzer API. " +
+                "ARGUS API. " +
                 "Make sure the FastAPI server " +
                 "is running."
             );
@@ -1683,8 +1912,24 @@ if (analyzeButton) {
 
     analyzeButton.addEventListener(
         "click",
-        analyzeSecurity
+        event => {
+
+            event.preventDefault();
+
+            analyzeSecurity();
+
+        }
     );
+}
+
+
+if (queryInput) {
+
+    queryInput.addEventListener(
+        "input",
+        saveQueryToSession
+    );
+
 }
 
 
@@ -1692,6 +1937,10 @@ if (analyzeButton) {
 // ==========================================================
 // Initial page load
 // ==========================================================
+
+restoreQueryFromSession();
+
+initializeSynchronizationControl();
 
 loadServers();
 

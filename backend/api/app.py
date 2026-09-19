@@ -1,7 +1,7 @@
 """
 app.py
 
-Main FastAPI application for LogLlamalyzer.
+Main FastAPI application for ARGUS.
 """
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ from backend.synchronization.synchronization_service import (
 from backend.api.log_type_endpoints import (
     router as log_type_router,
 )
-
 
 
 # ----------------------------------------------------------
@@ -81,6 +80,8 @@ synchronization_service = SynchronizationService()
 
 synchronization_thread: threading.Thread | None = None
 
+synchronization_enabled_by_user = False
+
 
 def start_synchronization_scheduler() -> None:
     """
@@ -89,11 +90,18 @@ def start_synchronization_scheduler() -> None:
     """
 
     global synchronization_thread
+    global synchronization_enabled_by_user
 
     if (
         synchronization_thread is not None
         and synchronization_thread.is_alive()
     ):
+        synchronization_enabled_by_user = True
+
+        synchronization_logger.info(
+            "Synchronization is already running."
+        )
+
         return
 
     synchronization_enabled = (
@@ -106,6 +114,8 @@ def start_synchronization_scheduler() -> None:
             "Synchronization is globally disabled "
             "in system.config."
         )
+
+        synchronization_enabled_by_user = False
 
         return
 
@@ -140,13 +150,27 @@ def start_synchronization_scheduler() -> None:
 
     synchronization_thread.start()
 
+    synchronization_enabled_by_user = True
+
+    synchronization_logger.info(
+        "Synchronization started by user."
+    )
+
 
 def stop_synchronization_scheduler() -> None:
     """
     Stop the continuous synchronization scheduler.
     """
 
+    global synchronization_enabled_by_user
+
     synchronization_service.stop_continuous_sync()
+
+    synchronization_enabled_by_user = False
+
+    synchronization_logger.info(
+        "Synchronization stopped by user."
+    )
 
 
 # ----------------------------------------------------------
@@ -170,19 +194,78 @@ async def lifespan(app: FastAPI):
     app.state.hosts_config = hosts_config
     app.state.system_config = system_config
 
-    start_synchronization_scheduler()
+    # Synchronization is intentionally NOT started
+    # automatically. It is controlled from the frontend.
+    synchronization_logger.info(
+        "Application started with synchronization OFF."
+    )
 
     yield
 
+    # Always stop synchronization when the application
+    # shuts down.
     stop_synchronization_scheduler()
 
 
 app = FastAPI(
-    title="LogLlamalyzer API",
+    title="ARGUS API",
     description="API for LLM-based security log analysis.",
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+# ----------------------------------------------------------
+# Synchronization Control Endpoints
+# ----------------------------------------------------------
+
+@app.post("/sync/start")
+def start_sync():
+    """
+    Start continuous log synchronization.
+    """
+
+    start_synchronization_scheduler()
+
+    return {
+        "enabled": synchronization_enabled_by_user,
+        "status": "running"
+        if synchronization_enabled_by_user
+        else "stopped",
+    }
+
+
+@app.post("/sync/stop")
+def stop_sync():
+    """
+    Stop continuous log synchronization.
+    """
+
+    stop_synchronization_scheduler()
+
+    return {
+        "enabled": False,
+        "status": "stopped",
+    }
+
+
+@app.get("/sync/status")
+def sync_status():
+    """
+    Return the current synchronization status.
+    """
+
+    running = (
+        synchronization_thread is not None
+        and synchronization_thread.is_alive()
+    )
+
+    return {
+        "enabled": running,
+        "status": "running"
+        if running
+        else "stopped",
+    }
 
 
 # ----------------------------------------------------------
@@ -225,7 +308,7 @@ def root():
     """
 
     return {
-        "application": "LogLlamalyzer",
+        "application": "ARGUS",
         "status": "running",
         "version": "1.0.0",
     }

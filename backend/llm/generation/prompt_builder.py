@@ -69,6 +69,56 @@ Analyse the following security query:
 Retrieved evidence:
 
 {retrieved_context}
+
+IMPORTANT OUTPUT REQUIREMENTS:
+
+Complete every section of the security assessment.
+
+THREAT ASSESSMENT
+Provide a detailed assessment of whether the retrieved
+evidence indicates a potential security threat. Explain
+the conclusion and the level of confidence supported by
+the evidence.
+
+EVIDENCE
+List the important observations from the retrieved logs.
+Include relevant timestamps, users, source identifiers,
+event types, processes, authentication activity, or other
+details when they are present in the retrieved evidence.
+Do not invent missing details.
+
+SECURITY INTERPRETATION
+Provide a detailed explanation of what the observed events
+may indicate. Connect the evidence to the security query.
+Clearly distinguish observed facts from security
+interpretation.
+
+SEVERITY
+Provide one of:
+LOW, MEDIUM, HIGH, or CRITICAL.
+
+Explain why the selected severity is appropriate based only
+on the retrieved evidence.
+
+RECOMMENDED ACTIONS
+Provide several practical actions that could help
+investigate, contain, monitor, or mitigate the potential
+threat. Actions should be relevant to the observed evidence.
+
+LIMITATIONS
+Clearly explain what the retrieved evidence does not prove.
+If the evidence is insufficient to confirm the suspected
+activity, state this explicitly and identify what additional
+evidence would be useful.
+
+IMPORTANT:
+- Complete all six sections.
+- Do not omit any section.
+- Do not provide only a short summary.
+- Use the retrieved evidence as the basis for every claim.
+- Do not invent IP addresses, usernames, timestamps,
+  processes, events, attack details, or other facts.
+- Clearly distinguish evidence from interpretation.
 """.strip()
 
         return prompt
@@ -108,8 +158,15 @@ Retrieved evidence:
             "using only the retrieved evidence.\n\n"
             f"QUERY:\n{context.query}\n\n"
             f"EVIDENCE:\n{retrieved_context}\n\n"
-            "Identify the potential threat, supporting "
-            "evidence, severity, and recommended actions. "
+            "Provide the following sections:\n\n"
+            "THREAT ASSESSMENT\n"
+            "EVIDENCE\n"
+            "SECURITY INTERPRETATION\n"
+            "SEVERITY\n"
+            "RECOMMENDED ACTIONS\n"
+            "LIMITATIONS\n\n"
+            "Complete every section. "
+            "Use only the retrieved evidence. "
             "Do not invent information."
         )
 

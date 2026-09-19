@@ -2,7 +2,7 @@
 knowledge_document.py
 
 Defines a security knowledge document used by
-the LogLlamalyzer knowledge base.
+the ARGUS knowledge base.
 """
 
 from dataclasses import dataclass, field

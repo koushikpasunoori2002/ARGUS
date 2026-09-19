@@ -59,7 +59,7 @@ class SynchronizationService:
         self._state_lock = threading.Lock()
 
         # Independent synchronization jobs can run concurrently.
-        self._executor = ThreadPoolExecutor(
+        self._executor: ThreadPoolExecutor | None = ThreadPoolExecutor(
             max_workers=10,
             thread_name_prefix="LogLlamalyzer-Rsync",
         )
@@ -516,6 +516,11 @@ class SynchronizationService:
             )
 
         self._stop_event.clear()
+        if self._executor is None:
+            self._executor = ThreadPoolExecutor(
+                max_workers=10,
+                thread_name_prefix="LogLlamalyzer-Rsync",
+            )
 
         logger.info(
             "Continuous synchronization scheduler started "
@@ -564,10 +569,12 @@ class SynchronizationService:
 
         self._stop_event.set()
 
-        self._executor.shutdown(
-            wait=False,
-            cancel_futures=True,
-        )
+        if self._executor is not None:
+            self._executor.shutdown(
+                wait=False,
+                cancel_futures=True,
+            )
+            self._executor = None
 
         logger.info(
             "Synchronization worker pool stopped."

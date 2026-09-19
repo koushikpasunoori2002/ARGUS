@@ -19,8 +19,8 @@ class LLMClient:
         self,
         model="llama3.1:8b",
         base_url="http://localhost:11434",
-        timeout=120,
-        num_predict=150,
+        timeout=300,
+        num_predict=600,
     ):
         self.model = model
         self.base_url = base_url.rstrip("/")

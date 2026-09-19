@@ -1,7 +1,7 @@
 """
 endpoints.py
 
-Security analysis API endpoints for LogLlamalyzer.
+Security analysis API endpoints for ARGUS.
 """
 
 from fastapi import APIRouter, HTTPException

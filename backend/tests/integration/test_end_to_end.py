@@ -1,7 +1,7 @@
 """
 test_end_to_end.py
 
-End-to-end integration tests for LogLlamalyzer.
+End-to-end integration tests for ARGUS.
 
 Tests the complete flow from the API request through
 the RAG + LLM analysis pipeline.
@@ -22,7 +22,7 @@ def test_root_endpoint():
 
     data = response.json()
 
-    assert data["application"] == "LogLlamalyzer"
+    assert data["application"] == "ARGUS"
     assert data["status"] == "running"
 
 
@@ -43,7 +43,7 @@ def test_status_endpoint():
 
     data = response.json()
 
-    assert data["application"] == "LogLlamalyzer"
+    assert data["application"] == "ARGUS"
     assert data["status"] == "operational"
 
 

@@ -1,5 +1,5 @@
-﻿"""
-Final quantitative evaluation summary for LogLlamalyzer.
+"""
+Final quantitative evaluation summary for ARGUS.
 
 This module consolidates previously executed evaluation evidence
 into a reproducible machine-readable result artifact.
@@ -48,7 +48,7 @@ def build_evaluation_results(performance):
     """Build the final structured evaluation results."""
 
     return {
-        "project": "LogLlamalyzer",
+        "project": "ARGUS",
         "evaluation": {
             "phase": "Phase 42",
             "purpose": (
@@ -167,7 +167,7 @@ def main():
         )
 
     print("=" * 60)
-    print("LOGLLAMALYZER FINAL EVALUATION")
+    print("ARGUS FINAL EVALUATION")
     print("=" * 60)
 
     print(

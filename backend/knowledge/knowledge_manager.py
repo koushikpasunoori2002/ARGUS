@@ -2,7 +2,7 @@
 knowledge_manager.py
 
 Manages security knowledge documents used by
-the LogLlamalyzer RAG system.
+the ARGUS RAG system.
 """
 
 from pathlib import Path

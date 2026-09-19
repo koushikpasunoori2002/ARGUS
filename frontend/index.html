@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>LogLlamalyzer</title>
+    <title>ARGUS</title>
 
     <link
         rel="stylesheet"
@@ -34,7 +34,7 @@
             <div class="header-content">
 
                 <h1>
-                    LogLlamalyzer
+                    ARGUS
                 </h1>
 
                 <p>
@@ -245,22 +245,81 @@
                     </h2>
 
                     <p class="section-description">
-                        Synchronization activity and timing for each server.
+                        Control synchronization and monitor synchronization
+                        activity for each configured server.
                     </p>
 
 
+                    <!-- Global Synchronization Control -->
+
                     <div
-                        class="vertical-slider-viewport sync-status-viewport"
+                        class="sync-control"
                     >
 
                         <div
-                            id="sync-status-list"
-                            class="vertical-slider-track sync-status-list"
+                            class="sync-control-status"
                         >
 
-                            <p>
-                                No synchronization activity yet.
-                            </p>
+                            <span
+                                class="sync-control-label"
+                            >
+                                Global Synchronization
+                            </span>
+
+                            <span
+                                id="global-sync-status"
+                                class="global-sync-status"
+                            >
+                                OFF
+                            </span>
+
+                        </div>
+
+
+                        <label
+                            class="sync-toggle"
+                            for="sync-toggle-button"
+                        >
+
+                            <input
+                                type="checkbox"
+                                id="sync-toggle-button"
+                            >
+
+                            <span
+                                class="sync-toggle-slider"
+                            ></span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- Per-server Synchronization Status -->
+
+                    <div
+                        class="sync-status-container"
+                    >
+
+                        <h3>
+                            Server Synchronization Status
+                        </h3>
+
+
+                        <div
+                            class="vertical-slider-viewport sync-status-viewport"
+                        >
+
+                            <div
+                                id="sync-status-list"
+                                class="vertical-slider-track sync-status-list"
+                            >
+
+                                <p>
+                                    No synchronization activity yet.
+                                </p>
+
+                            </div>
 
                         </div>
 
@@ -278,31 +337,13 @@
                     class="panel server-section"
                 >
 
-                    <div class="section-header">
+                    <h2>
+                        Server Management
+                    </h2>
 
-                        <div>
-
-                            <h2>
-                                Server Management
-                            </h2>
-
-                            <p class="section-description">
-                                Add, edit or delete synchronized servers.
-                            </p>
-
-                        </div>
-
-
-                        <button
-                            id="add-server-button"
-                            type="button"
-                            class="primary-button"
-                        >
-                            Add Server
-                        </button>
-
-                    </div>
-
+                    <p class="section-description">
+                        Configure and manage remote log servers.
+                    </p>
 
 
                     <!-- ------------------------------------------------

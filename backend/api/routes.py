@@ -1,7 +1,7 @@
 """
 routes.py
 
-Basic API routes for LogLlamalyzer.
+Basic API routes for ARGUS.
 """
 
 from fastapi import APIRouter
@@ -17,6 +17,6 @@ def status():
     """
 
     return {
-        "application": "LogLlamalyzer",
+        "application": "ARGUS",
         "status": "operational",
     }

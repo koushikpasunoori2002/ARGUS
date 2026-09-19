@@ -1,7 +1,7 @@
 """
 test_api.py
 
-Tests the FastAPI endpoints for LogLlamalyzer.
+Tests the FastAPI endpoints for ARGUS.
 """
 
 from fastapi.testclient import TestClient
@@ -27,7 +27,7 @@ def test_root_endpoint():
 
     data = response.json()
 
-    assert data["application"] == "LogLlamalyzer"
+    assert data["application"] == "ARGUS"
     assert data["status"] == "running"
     assert data["version"] == "1.0.0"
 
@@ -65,7 +65,7 @@ def test_status_endpoint():
 
     data = response.json()
 
-    assert data["application"] == "LogLlamalyzer"
+    assert data["application"] == "ARGUS"
     assert data["status"] == "operational"
 
 

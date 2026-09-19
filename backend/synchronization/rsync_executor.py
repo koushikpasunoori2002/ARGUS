@@ -90,7 +90,7 @@ class RsyncExecutor:
 
         else:
             # Resolve project-relative paths against the
-            # LogLlamalyzer project root.
+            # ARGUS project root.
             windows_path = (
                 self.project_root / path_string
             ).resolve()
