@@ -1,0 +1,7 @@
+﻿* text=auto
+*.py text
+*.js text
+*.css text
+*.html text
+*.md text
+*.txt text

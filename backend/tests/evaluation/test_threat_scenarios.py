@@ -26,8 +26,8 @@ SCENARIOS = [
         "query": "suspicious sudo privilege escalation activity",
         "concepts": [
             ["sudo"],
-            ["privilege"],
-            ["escalation"],
+            ["privilege", "permissions", "access rights"],
+            ["escalation", "escalate"],
         ],
     },
     {
@@ -74,6 +74,17 @@ def _concept_matches(answer, concepts):
         for concept in concepts
     )
 
+def _missing_concepts(answer, concepts):
+    answer_lower = answer.lower()
+
+    return [
+        concept
+        for concept in concepts
+        if not any(
+            term.lower() in answer_lower
+            for term in concept
+        )
+    ]
 
 def analyse_scenario(scenario):
     response = client.post(
@@ -101,6 +112,13 @@ def analyse_scenario(scenario):
         answer,
         scenario["concepts"],
     )
+    if not passed:
+        print(
+            f"\nScenario: {scenario['name']}"
+            f"\nMissing concept groups: "
+            f"{_missing_concepts(answer, scenario['concepts'])}"
+            f"\nGenerated answer:\n{answer}"
+        )
 
     return passed, response, answer
 

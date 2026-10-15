@@ -1,3 +1,17 @@
+# ARGUS: An LLM-RAG Guided Unified Reasoning System for Security Operational Centres
+# Copyright 2026 Koushik Pasunoori and Dr Jose Maria Alcaraz Calero
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """
 prompt_builder.py
 
@@ -70,55 +84,32 @@ Retrieved evidence:
 
 {retrieved_context}
 
-IMPORTANT OUTPUT REQUIREMENTS:
 
-Complete every section of the security assessment.
+        IMPORTANT OUTPUT REQUIREMENTS:
 
-THREAT ASSESSMENT
-Provide a detailed assessment of whether the retrieved
-evidence indicates a potential security threat. Explain
-the conclusion and the level of confidence supported by
-the evidence.
+        Follow the configured security-analysis template above.
+        Its rules take precedence over any general formatting
+        instructions in this prompt.
 
-EVIDENCE
-List the important observations from the retrieved logs.
-Include relevant timestamps, users, source identifiers,
-event types, processes, authentication activity, or other
-details when they are present in the retrieved evidence.
-Do not invent missing details.
+        Analyse the specific security activity in the user's query.
+        Prioritise directly relevant retrieved log events.
+        Do not let unrelated security knowledge or less relevant
+        events replace the primary finding.
 
-SECURITY INTERPRETATION
-Provide a detailed explanation of what the observed events
-may indicate. Connect the evidence to the security query.
-Clearly distinguish observed facts from security
-interpretation.
+        Complete all six required sections:
+        THREAT ASSESSMENT
+        EVIDENCE
+        SECURITY INTERPRETATION
+        SEVERITY
+        RECOMMENDED ACTIONS
+        LIMITATIONS
 
-SEVERITY
-Provide one of:
-LOW, MEDIUM, HIGH, or CRITICAL.
-
-Explain why the selected severity is appropriate based only
-on the retrieved evidence.
-
-RECOMMENDED ACTIONS
-Provide several practical actions that could help
-investigate, contain, monitor, or mitigate the potential
-threat. Actions should be relevant to the observed evidence.
-
-LIMITATIONS
-Clearly explain what the retrieved evidence does not prove.
-If the evidence is insufficient to confirm the suspected
-activity, state this explicitly and identify what additional
-evidence would be useful.
-
-IMPORTANT:
-- Complete all six sections.
-- Do not omit any section.
-- Do not provide only a short summary.
-- Use the retrieved evidence as the basis for every claim.
-- Do not invent IP addresses, usernames, timestamps,
-  processes, events, attack details, or other facts.
-- Clearly distinguish evidence from interpretation.
+        Follow the configured template's exact requirements for
+        the number of evidence items and recommended actions.
+        Use only retrieved evidence for factual claims.
+        Clearly distinguish observed facts from interpretation.
+        Do not invent events, users, timestamps, processes,
+        attack details, or other missing information.
 """.strip()
 
         return prompt
